@@ -138,6 +138,12 @@ char_t: char_t.o start.o
 	$(LD) $(LDFLAGS) start.o char_t.o -o char_t.coff
 	$(COFF2NOFF) char_t.coff char_t
 
+ascii_prog.o: ascii_prog.c
+	$(CC) $(CFLAGS) -c ascii_prog.c
+ascii_prog: ascii_prog.o start.o
+	$(LD) $(LDFLAGS) start.o ascii_prog.o -o ascii_prog.coff
+	$(COFF2NOFF) ascii_prog.coff ascii_prog
+
 add.o: add.c
 	$(CC) $(CFLAGS) -c add.c
 
