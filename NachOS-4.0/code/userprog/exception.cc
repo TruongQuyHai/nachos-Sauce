@@ -56,7 +56,15 @@ void ExceptionHandler(ExceptionType which)
 
 	switch (which)
 	{
+		// no exception: return control to the operating system
+	case NoException:
+	{
+		kernel->interrupt->setStatus(SystemMode);
+		DEBUG(dbgSys, "Change to system mode.\n");
+		break;
+	}
 	case SyscallException:
+	{
 		switch (type)
 		{
 		case SC_Halt:
@@ -103,6 +111,7 @@ void ExceptionHandler(ExceptionType which)
 		{
 			int result = ReadNumSys();
 			kernel->machine->WriteRegister(2, result);
+
 			/* Modify return point */
 			{
 				/* set previous programm counter (debugging only)*/
@@ -170,9 +179,25 @@ void ExceptionHandler(ExceptionType which)
 			break;
 		}
 		break;
+	}
+	// other exceptions: print error and halt
+	case PageFaultException:
+	case ReadOnlyException:
+	case BusErrorException:
+	case AddressErrorException:
+	case OverflowException:
+	case IllegalInstrException:
+	case NumExceptionTypes:
+	{
+		cerr << "Error: " << which << ".\n";
+		SysHalt();
+		ASSERTNOTREACHED();
+	}
 	default:
+	{
 		cerr << "Unexpected user mode exception" << (int)which << "\n";
 		break;
+	}
 	}
 	ASSERTNOTREACHED();
 }
