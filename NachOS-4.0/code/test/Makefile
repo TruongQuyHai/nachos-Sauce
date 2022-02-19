@@ -126,6 +126,18 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	$(COFF2NOFF) halt.coff halt
 
+readnum.o: readnum.c
+	$(CC) $(CFLAGS) -c readnum.c
+readnum: readnum.o start.o
+	$(LD) $(LDFLAGS) start.o readnum.o -o readnum.coff
+	$(COFF2NOFF) readnum.coff readnum
+
+char_t.o: char_t.c
+	$(CC) $(CFLAGS) -c char_t.c
+char_t: char_t.o start.o
+	$(LD) $(LDFLAGS) start.o char_t.o -o char_t.coff
+	$(COFF2NOFF) char_t.coff char_t
+
 add.o: add.c
 	$(CC) $(CFLAGS) -c add.c
 
