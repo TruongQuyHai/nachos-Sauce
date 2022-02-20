@@ -156,6 +156,12 @@ void PrintCharSys(char character)
   kernel->synchConsoleOut->PutChar(character);
 }
 
+void PrintStringSys(char* buffer, int length) {
+    for (int i = 0; i < length; i++) {
+        kernel->synchConsoleOut->PutChar(buffer[i]);
+    }
+}
+
 void SysHalt()
 {
   kernel->interrupt->Halt();

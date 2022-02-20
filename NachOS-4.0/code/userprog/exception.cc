@@ -48,6 +48,45 @@
 //	is in machine.h.
 //----------------------------------------------------------------------
 
+// Modify return point
+void ModifyReturnPoint()
+{
+	/* set previous programm counter (debugging only)*/
+	kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+
+	/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
+	kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+
+	/* set next programm counter for brach execution */
+	kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+}
+
+// Convert user string to system string
+char *convertStringUserToSystem(int addr, int convert_length = -1)
+{
+	int length = 0;
+	bool stop = false;
+	char *str;
+
+	do
+	{
+		int oneChar;
+		kernel->machine->ReadMem(addr + length, 1, &oneChar);
+		length++;
+		stop = ((oneChar == '\0' && convert_length == -1) ||
+				length == convert_length);
+	} while (!stop);
+
+	str = new char[length];
+	for (int i = 0; i < length; i++)
+	{
+		int character;
+		kernel->machine->ReadMem(addr + i, 1, &character);
+		str[i] = (unsigned char)character;
+	}
+	return str;
+}
+
 void ExceptionHandler(ExceptionType which)
 {
 	int type = kernel->machine->ReadRegister(2);
@@ -56,13 +95,15 @@ void ExceptionHandler(ExceptionType which)
 
 	switch (which)
 	{
-		// no exception: return control to the operating system
+	// no exception: return control to the operating system
 	case NoException:
 	{
 		kernel->interrupt->setStatus(SystemMode);
 		DEBUG(dbgSys, "Change to system mode.\n");
 		break;
 	}
+
+	// syscall exceptions: user system calls
 	case SyscallException:
 	{
 		switch (type)
@@ -76,6 +117,7 @@ void ExceptionHandler(ExceptionType which)
 			ASSERTNOTREACHED();
 			break;
 		}
+
 		case SC_Add:
 		{
 			DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
@@ -83,9 +125,10 @@ void ExceptionHandler(ExceptionType which)
 			/* Process SysAdd Systemcall*/
 			int result;
 			result = SysAdd(/* int op1 */ (int)kernel->machine->ReadRegister(4),
-											/* int op2 */ (int)kernel->machine->ReadRegister(5));
+							/* int op2 */ (int)kernel->machine->ReadRegister(5));
 
 			DEBUG(dbgSys, "Add returning with " << result << "\n");
+
 			/* Prepare Result */
 			kernel->machine->WriteRegister(2, (int)result);
 
@@ -107,6 +150,7 @@ void ExceptionHandler(ExceptionType which)
 
 			break;
 		}
+
 		case SC_ReadNum:
 		{
 			int result = ReadNumSys();
@@ -130,6 +174,7 @@ void ExceptionHandler(ExceptionType which)
 
 			break;
 		}
+
 		case SC_PrintNum:
 		{
 			int number = kernel->machine->ReadRegister(4);
@@ -152,6 +197,7 @@ void ExceptionHandler(ExceptionType which)
 
 			break;
 		}
+
 		case SC_PrintChar:
 		{
 			char character = kernel->machine->ReadRegister(4);
@@ -174,12 +220,27 @@ void ExceptionHandler(ExceptionType which)
 
 			break;
 		}
+
+		case SC_PrintString:
+		{
+			int memPtr = kernel->machine->ReadRegister(4);
+			char *buffer = convertStringUserToSystem(memPtr);
+			PrintStringSys(buffer, strlen(buffer));
+			delete[] buffer;
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
 		default:
 			cerr << "Unexpected system call " << type << "\n";
 			break;
 		}
 		break;
 	}
+
 	// other exceptions: print error and halt
 	case PageFaultException:
 	case ReadOnlyException:

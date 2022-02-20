@@ -122,8 +122,16 @@ PrintChar:
 	j $31
 	.end PrintChar
 
+	.globl PrintString
+	.ent PrintString
+PrintString:
+	addiu $2,$0,SC_PrintString
+	syscall
+	j $31
+	.end PrintString
+
 	.globl Remove
-	.ent	Remove
+	.ent Remove
 Remove:
 	addiu $2,$0,SC_Remove
 	syscall
