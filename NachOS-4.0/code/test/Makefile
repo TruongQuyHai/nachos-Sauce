@@ -144,6 +144,12 @@ ascii_prog: ascii_prog.o start.o
 	$(LD) $(LDFLAGS) start.o ascii_prog.o -o ascii_prog.coff
 	$(COFF2NOFF) ascii_prog.coff ascii_prog
 
+string_t.o: string_t.c
+	$(CC) $(CFLAGS) -c string_t.c
+string_t: string_t.o start.o
+	$(LD) $(LDFLAGS) start.o string_t.o -o string_t.coff
+	$(COFF2NOFF) string_t.coff string_t
+
 add.o: add.c
 	$(CC) $(CFLAGS) -c add.c
 
@@ -181,9 +187,9 @@ help: help.o start.o
 	$(LD) $(LDFLAGS) start.o help.o -o help.coff
 	$(COFF2NOFF) help.coff help
 
-bubblesort.o: bubble_sort.c
+bubble_sort.o: bubble_sort.c
 	$(CC) $(CFLAGS) -c bubble_sort.c
-bubblesort: bubble_sort.o start.o
+bubble_sort: bubble_sort.o start.o
 	$(LD) $(LDFLAGS) start.o bubble_sort.o -o bubble_sort.coff
 	$(COFF2NOFF) bubble_sort.coff bubble_sort
 

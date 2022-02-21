@@ -111,9 +111,7 @@ void ExceptionHandler(ExceptionType which)
 		case SC_Halt:
 		{
 			DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
-
 			SysHalt();
-
 			ASSERTNOTREACHED();
 			break;
 		}
@@ -132,22 +130,9 @@ void ExceptionHandler(ExceptionType which)
 			/* Prepare Result */
 			kernel->machine->WriteRegister(2, (int)result);
 
-			/* Modify return point */
-			{
-				/* set previous programm counter (debugging only)*/
-				kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
-
-				/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
-				kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-
-				/* set next programm counter for brach execution */
-				kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
-			}
-
+			ModifyReturnPoint();
 			return;
-
 			ASSERTNOTREACHED();
-
 			break;
 		}
 
@@ -156,22 +141,9 @@ void ExceptionHandler(ExceptionType which)
 			int result = ReadNumSys();
 			kernel->machine->WriteRegister(2, result);
 
-			/* Modify return point */
-			{
-				/* set previous programm counter (debugging only)*/
-				kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
-
-				/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
-				kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-
-				/* set next programm counter for brach execution */
-				kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
-			}
-
+			ModifyReturnPoint();
 			return;
-
 			ASSERTNOTREACHED();
-
 			break;
 		}
 
@@ -179,22 +151,10 @@ void ExceptionHandler(ExceptionType which)
 		{
 			int number = kernel->machine->ReadRegister(4);
 			PrintNumSys(number);
-			/* Modify return point */
-			{
-				/* set previous programm counter (debugging only)*/
-				kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
 
-				/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
-				kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-
-				/* set next programm counter for brach execution */
-				kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
-			}
-
+			ModifyReturnPoint();
 			return;
-
 			ASSERTNOTREACHED();
-
 			break;
 		}
 
@@ -202,22 +162,10 @@ void ExceptionHandler(ExceptionType which)
 		{
 			char character = kernel->machine->ReadRegister(4);
 			PrintCharSys(character);
-			/* Modify return point */
-			{
-				/* set previous programm counter (debugging only)*/
-				kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
 
-				/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
-				kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-
-				/* set next programm counter for brach execution */
-				kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
-			}
-
+			ModifyReturnPoint();
 			return;
-
 			ASSERTNOTREACHED();
-
 			break;
 		}
 
@@ -254,11 +202,13 @@ void ExceptionHandler(ExceptionType which)
 		SysHalt();
 		ASSERTNOTREACHED();
 	}
+
 	default:
 	{
 		cerr << "Unexpected user mode exception" << (int)which << "\n";
 		break;
 	}
 	}
+
 	ASSERTNOTREACHED();
 }

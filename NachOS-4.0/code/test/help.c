@@ -10,11 +10,12 @@ int main()
     PrintString(">>> 19125119 - Trương Lăng Trường Sơn\n\n");
 
     PrintString("ASCII table:\n");
-    PrintString(">>> build.linux/nachos -x test/ascii\n\n");
+    PrintString(">>> ../NachOS-4.0/code/test$ make ascii_prog\n");
+    PrintString(">>> ../NachOS-4.0/code/test$ ../build.linux/nachos -x ascii_prog\n\n");
 
     PrintString("Sort (bubble sort):\n");
-    PrintString(">>> build.linux/nachos -x test/bubble_sort\n");
-    PrintString(">>> Input the size of the array (0 <= n <= 100).\n");
-    PrintString(">>> Input elements of the array.\n");
-    PrintString(">>> Choose sort order (1: increasing, 2: decreasing).\n");
+    PrintString(">>> ../NachOS-4.0/code/test$ make bubble_sort\n");
+    PrintString(">>> ../NachOS-4.0/code/test$ ../build.linux/nachos -x bubble_sort\n\n");
+
+    Halt();
 }

@@ -118,16 +118,14 @@ void PrintNumSys(int number)
   if (number == 0)
   {
     kernel->synchConsoleOut->PutChar('0');
-    kernel->synchConsoleOut->PutChar('\n');
     return;
   }
   if (number == INT32_MIN)
   {
     for (int i = 0; i < 10; i++)
     {
-      kernel->synchConsoleOut->PutChar("2147483648\n"[i]);
+      kernel->synchConsoleOut->PutChar("2147483648"[i]);
     }
-    kernel->synchConsoleOut->PutChar('\n');
     return;
   }
 
@@ -148,7 +146,6 @@ void PrintNumSys(int number)
   {
     kernel->synchConsoleOut->PutChar(numBuffer[j]);
   }
-  kernel->synchConsoleOut->PutChar('\n');
 }
 
 void PrintCharSys(char character)
