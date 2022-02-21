@@ -62,26 +62,25 @@ void ModifyReturnPoint()
 }
 
 // Convert user string to system string
-char *convertStringUserToSystem(int addr, int convert_length = -1)
+char *convertStringUserToSystem(int address, int max_length = -1)
 {
-	int length = 0;
-	bool stop = false;
 	char *str;
+	int length = 0;
+	bool end = false;
 
 	do
 	{
-		int oneChar;
-		kernel->machine->ReadMem(addr + length, 1, &oneChar);
+		int character;
+		kernel->machine->ReadMem(address + length, 1, &character);
 		length++;
-		stop = ((oneChar == '\0' && convert_length == -1) ||
-				length == convert_length);
-	} while (!stop);
+		end = ((character == '\0' && max_length == -1) || length == max_length);
+	} while (!end);
 
 	str = new char[length];
 	for (int i = 0; i < length; i++)
 	{
 		int character;
-		kernel->machine->ReadMem(addr + i, 1, &character);
+		kernel->machine->ReadMem(address + i, 1, &character);
 		str[i] = (unsigned char)character;
 	}
 	return str;
