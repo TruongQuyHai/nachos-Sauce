@@ -13,6 +13,7 @@
 
 #include "kernel.h"
 #include "synchconsole.h"
+#include <stdlib.h>
 
 #define LF ((char)10)
 #define CR ((char)13)
@@ -153,12 +154,29 @@ void PrintCharSys(char character)
   kernel->synchConsoleOut->PutChar(character);
 }
 
-void PrintStringSys(char* buffer, int length)
+void PrintStringSys(char *buffer, int length)
 {
-    for (int i = 0; i < length; i++)
-    {
-        kernel->synchConsoleOut->PutChar(buffer[i]);
-    }
+  for (int i = 0; i < length; i++)
+  {
+    kernel->synchConsoleOut->PutChar(buffer[i]);
+  }
+}
+
+char ReadCharSys() { return kernel->synchConsoleIn->GetChar(); }
+
+int RandomNumSys() { return random(); }
+
+char ReadCharSys() { return kernel->synchConsoleIn->GetChar(); }
+
+char *ReadStringSys(int length)
+{
+  char *buffer = new char[length + 1];
+  for (int i = 0; i < length; i++)
+  {
+    buffer[i] = ReadCharSys();
+  }
+  buffer[length] = '\0';
+  return buffer;
 }
 
 void SysHalt()

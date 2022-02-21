@@ -67,6 +67,12 @@ int Add(int op1, int op2);
 
 int ReadNum();
 
+int RandomNum();
+
+char ReadChar();
+
+void ReadString(char *buffer, int length);
+
 /* Address space control operations: Exit, Exec, Execv, and Join */
 
 /* This user program is done (status = 0 means exited normally). */

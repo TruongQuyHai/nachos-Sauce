@@ -86,6 +86,36 @@ char *convertStringUserToSystem(int address, int max_length = -1)
 	return str;
 }
 
+void move_program_counter()
+{
+	/* set previous programm counter (debugging only)
+	 * similar to: registers[PrevPCReg] = registers[PCReg];*/
+	kernel->machine->WriteRegister(PrevPCReg,
+								   kernel->machine->ReadRegister(PCReg));
+
+	/* set programm counter to next instruction
+	 * similar to: registers[PCReg] = registers[NextPCReg]*/
+	kernel->machine->WriteRegister(PCReg,
+								   kernel->machine->ReadRegister(NextPCReg));
+
+	/* set next programm counter for brach execution
+	 * similar to: registers[NextPCReg] = pcAfter;*/
+	kernel->machine->WriteRegister(
+		NextPCReg, kernel->machine->ReadRegister(NextPCReg) + 4);
+}
+
+#define MAX_READ_STRING_LENGTH 255
+void StringSys2User(char *str, int addr, int convert_length = -1)
+{
+	int length = (convert_length == -1 ? strlen(str) : convert_length);
+	for (int i = 0; i < length; i++)
+	{
+		kernel->machine->WriteMem(addr + i, 1,
+								  str[i]); // copy characters to user space
+	}
+	kernel->machine->WriteMem(addr + length, 1, '\0');
+}
+
 void ExceptionHandler(ExceptionType which)
 {
 	int type = kernel->machine->ReadRegister(2);
@@ -179,6 +209,36 @@ void ExceptionHandler(ExceptionType which)
 			return;
 			ASSERTNOTREACHED();
 			break;
+		}
+
+		case SC_RandomNum:
+		{
+			int result;
+			result = RandomNumSys();
+			kernel->machine->WriteRegister(2, result);
+			return move_program_counter();
+		}
+
+		case SC_ReadString:
+		{
+			int memPtr = kernel->machine->ReadRegister(4); // read address of C-string
+			int length = kernel->machine->ReadRegister(5); // read length of C-string
+			if (length > MAX_READ_STRING_LENGTH)
+			{ // avoid allocating large memory
+				DEBUG(dbgSys, "String length exceeds " << MAX_READ_STRING_LENGTH);
+				SysHalt();
+			}
+			char *buffer = ReadStringSys(length);
+			StringSys2User(buffer, memPtr);
+			delete[] buffer;
+			return move_program_counter();
+		}
+
+		case SC_ReadChar:
+		{
+			char result = ReadCharSys();
+			kernel->machine->WriteRegister(2, (int)result);
+			return move_program_counter();
 		}
 
 		default:
