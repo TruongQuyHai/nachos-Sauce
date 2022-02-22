@@ -162,8 +162,6 @@ void PrintStringSys(char *buffer, int length)
   }
 }
 
-char ReadCharSys() { return kernel->synchConsoleIn->GetChar(); }
-
 int RandomNumSys() { return random(); }
 
 char ReadCharSys() { return kernel->synchConsoleIn->GetChar(); }
