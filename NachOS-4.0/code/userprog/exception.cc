@@ -52,13 +52,13 @@
 // This code is adapted from `../machine/mipssim.cc`, line 667
 void ModifyReturnPoint()
 {
-	/* set previous programm counter (debugging only)*/
+	/* set previous program counter (debugging only)*/
 	kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
 
-	/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
+	/* set program counter to next instruction (all Instructions are 4 byte wide)*/
 	kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
 
-	/* set next programm counter for brach execution */
+	/* set next program counter for brach execution */
 	kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
 }
 
