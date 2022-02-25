@@ -2,7 +2,7 @@
 
 int main()
 {
-    // use PrintString() to display introduction of group, ascii and sorting program
+    // use PrintString function to print the introduction of the group, ascii, and sorting program
     PrintString("CS333 - 19CTT2 - SAUCE\n\n");
 
     PrintString("Team members:\n");

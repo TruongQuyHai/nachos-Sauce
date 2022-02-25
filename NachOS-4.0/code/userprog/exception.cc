@@ -108,7 +108,7 @@ void ExceptionHandler(ExceptionType which)
 
 	switch (which)
 	{
-	// no exception: return control to the operating system
+	// no exception: return the control to the operating system
 	case NoException:
 	{
 		kernel->interrupt->setStatus(SystemMode);
