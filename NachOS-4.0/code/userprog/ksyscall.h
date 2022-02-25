@@ -154,8 +154,10 @@ void PrintCharSys(char character)
   kernel->synchConsoleOut->PutChar(character);
 }
 
+// this function prints system string
 void PrintStringSys(char *buffer, int length)
 {
+  // use for loop to print each character of the string
   for (int i = 0; i < length; i++)
   {
     kernel->synchConsoleOut->PutChar(buffer[i]);

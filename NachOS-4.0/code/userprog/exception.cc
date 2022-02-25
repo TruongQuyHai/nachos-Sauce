@@ -61,7 +61,8 @@ void ModifyReturnPoint()
 	kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
 }
 
-// Convert user string to system string
+// this function converts user string to system string
+// return char*
 char *convertStringUserToSystem(int address, int max_length = -1)
 {
 	char *str;
@@ -73,6 +74,7 @@ char *convertStringUserToSystem(int address, int max_length = -1)
 		int character;
 		kernel->machine->ReadMem(address + length, 1, &character);
 		length++;
+		// stop the loop when length == -1 or reaching max length of the covert string
 		end = ((character == '\0' && max_length == -1) || length == max_length);
 	} while (!end);
 
@@ -80,6 +82,7 @@ char *convertStringUserToSystem(int address, int max_length = -1)
 	for (int i = 0; i < length; i++)
 	{
 		int character;
+		// copy character to kernel space
 		kernel->machine->ReadMem(address + i, 1, &character);
 		str[i] = (unsigned char)character;
 	}
@@ -92,8 +95,7 @@ void StringSys2User(char *str, int addr, int convert_length = -1)
 	int length = (convert_length == -1 ? strlen(str) : convert_length);
 	for (int i = 0; i < length; i++)
 	{
-		kernel->machine->WriteMem(addr + i, 1,
-								  str[i]); // copy characters to user space
+		kernel->machine->WriteMem(addr + i, 1, str[i]); // copy characters to user space
 	}
 	kernel->machine->WriteMem(addr + length, 1, '\0');
 }
@@ -182,8 +184,9 @@ void ExceptionHandler(ExceptionType which)
 
 		case SC_PrintString:
 		{
-			int memPtr = kernel->machine->ReadRegister(4);
-			char *buffer = convertStringUserToSystem(memPtr);
+			// read address of C-string
+			int address = kernel->machine->ReadRegister(4);
+			char *buffer = convertStringUserToSystem(address);
 			PrintStringSys(buffer, strlen(buffer));
 			delete[] buffer;
 
