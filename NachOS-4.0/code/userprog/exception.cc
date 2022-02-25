@@ -93,7 +93,7 @@ void StringSys2User(char *str, int addr, int convert_length = -1)
 	for (int i = 0; i < length; i++)
 	{
 		kernel->machine->WriteMem(addr + i, 1,
-								  str[i]); // copy characters to user space
+															str[i]); // copy characters to user space
 	}
 	kernel->machine->WriteMem(addr + length, 1, '\0');
 }
@@ -102,7 +102,7 @@ void ExceptionHandler(ExceptionType which)
 {
 	int type = kernel->machine->ReadRegister(2);
 
-	DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
+	// DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
 
 	switch (which)
 	{
@@ -134,7 +134,7 @@ void ExceptionHandler(ExceptionType which)
 			/* Process SysAdd Systemcall*/
 			int result;
 			result = SysAdd(/* int op1 */ (int)kernel->machine->ReadRegister(4),
-							/* int op2 */ (int)kernel->machine->ReadRegister(5));
+											/* int op2 */ (int)kernel->machine->ReadRegister(5));
 
 			DEBUG(dbgSys, "Add returning with " << result << "\n");
 

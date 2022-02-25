@@ -138,6 +138,12 @@ char_t: char_t.o start.o
 	$(LD) $(LDFLAGS) start.o char_t.o -o char_t.coff
 	$(COFF2NOFF) char_t.coff char_t
 
+random_num.o: random_num.c
+	$(CC) $(CFLAGS) -c random_num.c
+random_num: random_num.o start.o
+	$(LD) $(LDFLAGS) start.o random_num.o -o random_num.coff
+	$(COFF2NOFF) random_num.coff random_num
+
 ascii_prog.o: ascii_prog.c
 	$(CC) $(CFLAGS) -c ascii_prog.c
 ascii_prog: ascii_prog.o start.o

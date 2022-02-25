@@ -48,6 +48,7 @@ int ReadNumFromConsole()
     numBuffer[i++] = c;
     if (i == 1 && c == '-')
     {
+      c = kernel->synchConsoleIn->GetChar();
       continue;
     }
     else if (i > 1 && c == '-')
@@ -70,38 +71,54 @@ int ReadNumFromConsole()
   return 1;
 }
 
+/**
+ * This function read a sequence of characters from the console and convert to a number
+ * @return number
+ */
 int ReadNumSys()
 {
+  // if users input 0 or some errors occur => return 0
   if (ReadNumFromConsole() == 0)
   {
     return 0;
   }
+  // handle INT32_MIN because INT32_MIN can not be converted from positive number
+  // 214783647 < 2147483648
   if (strcmp(numBuffer, "-2147483648") == 0)
   {
     return INT32_MIN;
   }
   int num = 0;
   bool isNegative = numBuffer[0] == '-';
+  // if not negative then store the first number of the numBuffer to num
   if (!isNegative)
   {
     num = numBuffer[0] - '0';
   }
+
+  // run loop from 1 -> strlen and add to num the correct amount
   for (int i = 1; i < (int)strlen(numBuffer); i++)
   {
     num = num * 10 + (numBuffer[i] - '0');
   }
+  // if is negative, inverse the number. because we already handle the INT32_MIN => no overflow
   if (isNegative)
   {
     num = -num;
   }
 
+  // if isNegative but num > 0 => overflow => return 0
+  // if not isNegative but num < 0 => overflow => return 0
   if ((isNegative && num > 0) || (!isNegative && num < 0))
   {
     DEBUG(dbgSys, "INT32 expected, " << numBuffer << " found");
     return 0;
   }
 
+  // if negative -> inverse
   int numTemp = isNegative ? -num : num;
+  // compare number numTemp to numBuffer
+  // if different => some errors occurred => return 0
   for (int i = strlen(numBuffer) - 1; i >= isNegative; i--)
   {
     if ((numBuffer[i] - '0') != (numTemp % 10))
@@ -114,6 +131,10 @@ int ReadNumSys()
   return num;
 }
 
+/**
+ * Function print number to console
+ * @param number
+ */
 void PrintNumSys(int number)
 {
   if (number == 0)
@@ -121,15 +142,18 @@ void PrintNumSys(int number)
     kernel->synchConsoleOut->PutChar('0');
     return;
   }
+
+  // handle INT32_MIN case to prevent overflow
   if (number == INT32_MIN)
   {
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 11; i++)
     {
-      kernel->synchConsoleOut->PutChar("2147483648"[i]);
+      kernel->synchConsoleOut->PutChar("-2147483648"[i]);
     }
     return;
   }
 
+  // if number < 0 => inverse and print to console '-'
   if (number < 0)
   {
     kernel->synchConsoleOut->PutChar('-');
@@ -143,6 +167,7 @@ void PrintNumSys(int number)
     number /= 10;
   }
 
+  // print the number part
   for (int j = i - 1; j >= 0; j--)
   {
     kernel->synchConsoleOut->PutChar(numBuffer[j]);

@@ -122,6 +122,30 @@ PrintChar:
 	j $31
 	.end PrintChar
 
+	.globl ReadChar
+	.ent ReadChar
+ReadChar:
+	addiu $2,$0,SC_ReadChar
+	syscall
+	j $31
+	.end ReadChar
+
+	.globl RandomNum
+	.ent RandomNum
+RandomNum:
+	addiu $2,$0,SC_RandomNum
+	syscall
+	j $31
+	.end RandomNum
+
+	.globl ReadString
+	.ent ReadString
+ReadString:
+	addiu $2,$0,SC_ReadString
+	syscall
+	j $31
+	.end ReadString
+
 	.globl PrintString
 	.ent PrintString
 PrintString:
