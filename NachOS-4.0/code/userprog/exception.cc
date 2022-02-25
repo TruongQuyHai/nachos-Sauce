@@ -49,6 +49,7 @@
 //----------------------------------------------------------------------
 
 // Modify return point
+// This code is adapted from `../machine/mipssim.cc`, line 667
 void ModifyReturnPoint()
 {
 	/* set previous programm counter (debugging only)*/
@@ -90,12 +91,22 @@ char *convertStringUserToSystem(int address, int max_length = -1)
 }
 
 #define MAX_READ_STRING_LENGTH 255
-void StringSys2User(char *str, int addr, int convert_length = -1)
+/**
+ * Convert system string to user string
+ *
+ * 'str' string to convert
+ * 'addr' addess of user string
+ * 'convert_length' set max length of string to convert, leave
+ * blank to convert all characters of system string
+ */
+void convertSysStringToUser(char *str, int addr, int convert_length = -1)
 {
 	int length = (convert_length == -1 ? strlen(str) : convert_length);
+
+	// use for loop to copy characters to user space
 	for (int i = 0; i < length; i++)
 	{
-		kernel->machine->WriteMem(addr + i, 1, str[i]); // copy characters to user space
+		kernel->machine->WriteMem(addr + i, 1, str[i]);
 	}
 	kernel->machine->WriteMem(addr + length, 1, '\0');
 }
@@ -136,7 +147,7 @@ void ExceptionHandler(ExceptionType which)
 			/* Process SysAdd Systemcall*/
 			int result;
 			result = SysAdd(/* int op1 */ (int)kernel->machine->ReadRegister(4),
-											/* int op2 */ (int)kernel->machine->ReadRegister(5));
+							/* int op2 */ (int)kernel->machine->ReadRegister(5));
 
 			DEBUG(dbgSys, "Add returning with " << result << "\n");
 
@@ -218,7 +229,7 @@ void ExceptionHandler(ExceptionType which)
 				SysHalt();
 			}
 			char *buffer = ReadStringSys(length);
-			StringSys2User(buffer, memPtr);
+			convertSysStringToUser(buffer, memPtr);
 			delete[] buffer;
 
 			ModifyReturnPoint();

@@ -189,17 +189,23 @@ void PrintStringSys(char *buffer, int length)
   }
 }
 
+// this function generates random integer
 int RandomNumSys() { return random(); }
 
+// this function reads system char
 char ReadCharSys() { return kernel->synchConsoleIn->GetChar(); }
 
+// this function reads system string
 char *ReadStringSys(int length)
 {
   char *buffer = new char[length + 1];
+
+  // use for loop and ReadCharSys from above to append all characters of the string
   for (int i = 0; i < length; i++)
   {
     buffer[i] = ReadCharSys();
   }
+  // appending whitespace at the end of the string
   buffer[length] = '\0';
   return buffer;
 }
