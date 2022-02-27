@@ -28,7 +28,26 @@ void SysHalt()
   kernel->interrupt->Halt();
 }
 
+bool isEnter(char c) { return c == LF || c == CR; }
+
 bool isBlank(char c) { return c == LF || c == CR || c == TAB || c == SPACE; }
+
+void readRemainingConsoleInput()
+{
+  char c = kernel->synchConsoleIn->GetChar();
+  while (!(isEnter(c)))
+  {
+    c = kernel->synchConsoleIn->GetChar();
+  }
+}
+
+void SysHaltWithMessage(string message)
+{
+  readRemainingConsoleInput();
+  DEBUG(dbgSys, message);
+  cerr << message;
+  SysHalt();
+}
 
 int ReadNumFromConsole()
 {
@@ -37,18 +56,12 @@ int ReadNumFromConsole()
 
   if (c == EOF)
   {
-    DEBUG(dbgSys, "Number expected but end of file found.\n");
-    printf("Number expected but end of file found.\n");
-    SysHalt();
-    return 0;
+    SysHaltWithMessage("Number expected but end of file found.\n");
   }
 
   if (isBlank(c))
   {
-    DEBUG(dbgSys, "Number expected but white-space found.\n");
-    printf("Number expected but white-space found.\n");
-    SysHalt();
-    return 0;
+    SysHaltWithMessage("Number expected but white-space found.\n");
   }
 
   int i = 0;
@@ -62,24 +75,15 @@ int ReadNumFromConsole()
     }
     else if (i > 1 && c == '-')
     {
-      DEBUG(dbgSys, "Unexpected '-' sign. \n");
-      printf("Unexpected '-' sign. \n");
-      SysHalt();
-      return 0;
+      SysHaltWithMessage("Unexpected '-' sign. \n");
     }
     else if (((int)c < (int)'0') || ((int)c > (int)'9'))
     {
-      DEBUG(dbgSys, "Number expected!!!\n");
-      printf("Number expected!!!\n");
-      SysHalt();
-      return 0;
+      SysHaltWithMessage("Number expected!!!\n");
     }
     else if (i > MAX_NUM_LENGTH)
     {
-      DEBUG(dbgSys, "Number is too long");
-      printf("Number is too long, overflow!!!\n");
-      SysHalt();
-      return 0;
+      SysHaltWithMessage("Number is too long, overflow!!!\n");
     }
     c = kernel->synchConsoleIn->GetChar();
   }
