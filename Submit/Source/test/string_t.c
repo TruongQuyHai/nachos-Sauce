@@ -4,15 +4,16 @@ int main()
 {
   // use ReadString, PrintString, PrintChar function to test
   char *buffer;
-  ReadString(buffer, 10);
-  PrintString(buffer);
-  PrintChar('\n');
+  int n = 0;
 
-  PrintString(">>> CS333\n");
-  PrintString(">>> Introduction To Operating Systems\n");
-  PrintString(">>> Project 1\n");
-  PrintString(">>> 19CTT2\n");
-  PrintString(">>> Sauce\n\n");
-  
+  PrintString("Number of characters you want to print to the console: ");
+  n = ReadNum();
+
+  PrintString("Input that string here: ");
+  ReadString(buffer, n);
+  PrintString(">>> Your string: ");
+  PrintString(buffer);
+  PrintString("\n");
+
   Halt();
 }
