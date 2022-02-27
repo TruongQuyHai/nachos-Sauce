@@ -53,7 +53,6 @@ int ReadNumFromConsole()
 {
   memset(numBuffer, '\0', sizeof(numBuffer));
   char c = kernel->synchConsoleIn->GetChar();
-
   if (c == EOF)
   {
     SysHaltWithMessage("Number expected but end of file found.\n");
@@ -65,7 +64,7 @@ int ReadNumFromConsole()
   }
 
   int i = 0;
-  while (!(isBlank(c)) || c == EOF)
+  while (!isEnter(c))
   {
     numBuffer[i++] = c;
     if (i == 1 && c == '-')
@@ -73,20 +72,46 @@ int ReadNumFromConsole()
       c = kernel->synchConsoleIn->GetChar();
       continue;
     }
-    else if (i > 1 && c == '-')
+    else if (i > 1)
     {
-      SysHaltWithMessage("Unexpected '-' sign. \n");
+      if (c == '-')
+        SysHaltWithMessage("Unexpected '-' sign. \n");
+      else if (isBlank(c))
+        SysHaltWithMessage("Unexpected white-space. \n");
+      else if (i > MAX_NUM_LENGTH)
+      {
+        SysHaltWithMessage("Number is too long, overflow!!!\n");
+      }
     }
     else if (((int)c < (int)'0') || ((int)c > (int)'9'))
     {
       SysHaltWithMessage("Number expected!!!\n");
     }
-    else if (i > MAX_NUM_LENGTH)
-    {
-      SysHaltWithMessage("Number is too long, overflow!!!\n");
-    }
+
     c = kernel->synchConsoleIn->GetChar();
   }
+  // while (!(isBlank(c)) || c == EOF)
+  // {
+  //   numBuffer[i++] = c;
+  //   if (i == 1 && c == '-')
+  //   {
+  //     c = kernel->synchConsoleIn->GetChar();
+  //     continue;
+  //   }
+  //   else if (i > 1 && c == '-')
+  //   {
+  //     SysHaltWithMessage("Unexpected '-' sign. \n");
+  //   }
+  //   else if (((int)c < (int)'0') || ((int)c > (int)'9'))
+  //   {
+  //     SysHaltWithMessage("Number expected!!!\n");
+  //   }
+  //   else if (i > MAX_NUM_LENGTH)
+  //   {
+  //     SysHaltWithMessage("Number is too long, overflow!!!\n");
+  //   }
+  //   c = kernel->synchConsoleIn->GetChar();
+  // }
   return 1;
 }
 
