@@ -23,6 +23,11 @@
 #define MAX_NUM_LENGTH 11
 char numBuffer[MAX_NUM_LENGTH + 2];
 
+void SysHalt()
+{
+  kernel->interrupt->Halt();
+}
+
 bool isBlank(char c) { return c == LF || c == CR || c == TAB || c == SPACE; }
 
 int ReadNumFromConsole()
@@ -33,12 +38,16 @@ int ReadNumFromConsole()
   if (c == EOF)
   {
     DEBUG(dbgSys, "Number expected but end of file found.\n");
+    printf("Number expected but end of file found.\n");
+    SysHalt();
     return 0;
   }
 
   if (isBlank(c))
   {
     DEBUG(dbgSys, "Number expected but white-space found.\n");
+    printf("Number expected but white-space found.\n");
+    SysHalt();
     return 0;
   }
 
@@ -53,17 +62,23 @@ int ReadNumFromConsole()
     }
     else if (i > 1 && c == '-')
     {
-      DEBUG(dbgSys, "Unexpected '-' sign");
+      DEBUG(dbgSys, "Unexpected '-' sign. \n");
+      printf("Unexpected '-' sign. \n");
+      SysHalt();
       return 0;
     }
     else if (((int)c < (int)'0') || ((int)c > (int)'9'))
     {
-      DEBUG(dbgSys, "Number expected!!!");
+      DEBUG(dbgSys, "Number expected!!!\n");
+      printf("Number expected!!!\n");
+      SysHalt();
       return 0;
     }
     else if (i > MAX_NUM_LENGTH)
     {
       DEBUG(dbgSys, "Number is too long");
+      printf("Number is too long, overflow!!!\n");
+      SysHalt();
       return 0;
     }
     c = kernel->synchConsoleIn->GetChar();
@@ -208,11 +223,6 @@ char *ReadStringSys(int length)
   // appending whitespace at the end of the string
   buffer[length] = '\0';
   return buffer;
-}
-
-void SysHalt()
-{
-  kernel->interrupt->Halt();
 }
 
 int SysAdd(int op1, int op2)
