@@ -254,6 +254,57 @@ char *ReadStringSys(int length)
   return buffer;
 }
 
+int CreateSys(char *fileName)
+{
+  if (strlen(fileName) == 0 || fileName == NULL || !kernel->fileSystem->Create(fileName))
+  {
+    return -1;
+  }
+  return 0;
+}
+
+int OpenSys(char *fileName, int type)
+{
+  if (type != 0 && type != 1)
+    return -1;
+
+  int id = kernel->fileSystem->Open(fileName, type);
+  if (id == -1)
+    return -1;
+  DEBUG(dbgSys, "\nOpened file");
+  return id;
+}
+
+int ReadSys(char *buffer, int charCount, int fileId)
+{
+  if (fileId == 0)
+  {
+    return kernel->synchConsoleIn->GetString(buffer, charCount);
+  }
+  return kernel->fileSystem->Read(buffer, charCount, fileId);
+}
+
+int SeekSys(int seekPos, int fileId)
+{
+  if (fileId <= 1)
+  {
+    DEBUG(dbgSys, "\nCan't seek in console");
+    return -1;
+  }
+  return kernel->fileSystem->Seek(seekPos, fileId);
+}
+
+int WriteSys(char *buffer, int charCount, int fileId)
+{
+  if (fileId == 1)
+  {
+    return kernel->synchConsoleOut->PutString(buffer, charCount);
+  }
+  return kernel->fileSystem->Write(buffer, charCount, fileId);
+}
+
+int SysClose(int id) { return kernel->fileSystem->Close(id); }
+
 int SysAdd(int op1, int op2)
 {
   return op1 + op2;

@@ -199,6 +199,30 @@ bubble_sort: bubble_sort.o start.o
 	$(LD) $(LDFLAGS) start.o bubble_sort.o -o bubble_sort.coff
 	$(COFF2NOFF) bubble_sort.coff bubble_sort
 
+create.o: create.c
+	$(CC) $(CFLAGS) -c create.c
+create: create.o start.o
+	$(LD) $(LDFLAGS) start.o create.o -o create.coff
+	$(COFF2NOFF) create.coff create
+
+open.o: open.c
+	$(CC) $(CFLAGS) -c open.c
+open: open.o start.o
+	$(LD) $(LDFLAGS) start.o open.o -o open.coff
+	$(COFF2NOFF) open.coff open
+
+open_file.o: open_file.c
+	$(CC) $(CFLAGS) -c open_file.c
+open_file: open_file.o start.o
+	$(LD) $(LDFLAGS) start.o open_file.o -o open_file.coff
+	$(COFF2NOFF) open_file.coff open_file
+
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	$(COFF2NOFF) cat.coff cat
+
 clean:
 	$(RM) -f *.o *.ii
 	$(RM) -f *.coff

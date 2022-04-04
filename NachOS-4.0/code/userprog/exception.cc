@@ -249,6 +249,103 @@ void ExceptionHandler(ExceptionType which)
 			break;
 		}
 
+		case SC_Create:
+		{
+			int addr = kernel->machine->ReadRegister(4);
+			char *fileName = convertStringUserToSystem(addr);
+			int result = CreateSys(fileName);
+			kernel->machine->WriteRegister(2, result);
+
+			delete[] fileName;
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
+		case SC_Open:
+		{
+			int addr = kernel->machine->ReadRegister(4);
+			int type = kernel->machine->ReadRegister(5);
+			char *fileName = convertStringUserToSystem(addr);
+			int result = OpenSys(fileName, type);
+			kernel->machine->WriteRegister(2, result);
+			delete[] fileName;
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
+		case SC_Close:
+		{
+			int id = kernel->machine->ReadRegister(4);
+			kernel->machine->WriteRegister(2, SysClose(id));
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
+		case SC_Read:
+		{
+			int virtAddr = kernel->machine->ReadRegister(4);
+			int charCount = kernel->machine->ReadRegister(5);
+			char *buffer = convertStringUserToSystem(virtAddr, charCount);
+			int fileId = kernel->machine->ReadRegister(6);
+
+			DEBUG(dbgFile,
+				  "Read " << charCount << " chars from file " << fileId << "\n");
+
+			kernel->machine->WriteRegister(2, ReadSys(buffer, charCount, fileId));
+			convertSysStringToUser(buffer, virtAddr, charCount);
+
+			delete[] buffer;
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
+		case SC_Write:
+		{
+			int virtAddr = kernel->machine->ReadRegister(4);
+			int charCount = kernel->machine->ReadRegister(5);
+			char *buffer = convertStringUserToSystem(virtAddr, charCount);
+			int fileId = kernel->machine->ReadRegister(6);
+
+			DEBUG(dbgFile,
+				  "Write " << charCount << " chars to file " << fileId << "\n");
+
+			kernel->machine->WriteRegister(2, WriteSys(buffer, charCount, fileId));
+			convertSysStringToUser(buffer, virtAddr, charCount);
+
+			delete[] buffer;
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
+		case SC_Seek:
+		{
+
+			int seekPos = kernel->machine->ReadRegister(4);
+			int fileId = kernel->machine->ReadRegister(5);
+
+			kernel->machine->WriteRegister(2, SeekSys(seekPos, fileId));
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
 		default:
 			cerr << "Unexpected system call " << type << "\n";
 			break;
