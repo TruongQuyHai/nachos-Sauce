@@ -5,7 +5,6 @@
 
 int main()
 {
-    char fileName[MAX_LENGTH];
     char buffer[100];
     int i;
     int write;
@@ -29,13 +28,14 @@ int main()
     filesize = Seek(-1, fileid);
     Seek(0, fileid);
 
-    PrintString(" file: ");
+    PrintString("File content: ");
     i = 0;
     for (; i < filesize; i++) // Cho vong lap chay tu 0 - filesize
     {
         Read(&c, 1, fileid); // Goi ham Read de doc tung ki tu noi dung file
         PrintChar(c);        // Goi ham PrintChar de in tung ki tu ra man hinh
     }
+    PrintChar('\n');
     Close(fileid); // Goi ham Close de dong file
     Halt();
 }

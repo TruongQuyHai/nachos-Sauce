@@ -346,6 +346,27 @@ void ExceptionHandler(ExceptionType which)
 			break;
 		}
 
+		case SC_Remove:
+		{
+
+			int virtAddr = kernel->machine->ReadRegister(4);
+			char *buffer = convertStringUserToSystem(virtAddr);
+
+			if (kernel->fileSystem->Remove(buffer))
+			{
+				kernel->machine->WriteRegister(2, 0);
+			}
+			else
+			{
+				kernel->machine->WriteRegister(2, -1);
+			}
+
+			ModifyReturnPoint();
+			return;
+			ASSERTNOTREACHED();
+			break;
+		}
+
 		default:
 			cerr << "Unexpected system call " << type << "\n";
 			break;

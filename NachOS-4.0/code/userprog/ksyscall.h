@@ -53,14 +53,14 @@ int ReadNumFromConsole()
 {
   memset(numBuffer, '\0', sizeof(numBuffer));
   char c = kernel->synchConsoleIn->GetChar();
-  if (c == EOF)
+  while (c == EOF)
   {
-    SysHaltWithMessage("Number expected but end of file found.\n");
+    c = kernel->synchConsoleIn->GetChar();
   }
 
   if (isBlank(c))
   {
-    SysHaltWithMessage("Number expected but white-space found.\n");
+    c = kernel->synchConsoleIn->GetChar();
   }
 
   int i = 0;
