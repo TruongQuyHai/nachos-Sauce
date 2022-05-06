@@ -193,8 +193,7 @@ bool FileSystem::Create(char *name, int initialSize)
     else
     {
         freeMap = new PersistentBitmap(freeMapFile, NumSectors);
-        sector =
-            freeMap->FindAndSet(); // find a sector to hold the file header
+        sector = freeMap->FindAndSet(); // find a sector to hold the file header
         if (sector == -1)
             success = FALSE; // no free block for file header
         else if (!directory->Add(name, sector))
@@ -230,7 +229,8 @@ bool FileSystem::Create(char *name, int initialSize)
 //	"name" -- the text name of the file to be opened
 //----------------------------------------------------------------------
 
-OpenFile *FileSystem::Open(char *name)
+OpenFile *
+FileSystem::Open(char *name)
 {
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
@@ -340,25 +340,5 @@ void FileSystem::Print()
     delete freeMap;
     delete directory;
 }
-
-#else // FILESYS_STUB
-#include "copyright.h"
-#include "sysdep.h"
-#include "openfile.h"
-#include "filetable.h"
-#include "filesys.h"
-#include "kernel.h"
-#include "main.h"
-
-OpenFile *FileSystem::Open(char *name)
-{
-    int fileDescriptor = OpenForReadWrite(name, FALSE);
-
-    if (fileDescriptor == -1)
-        return NULL;
-    return new OpenFile(fileDescriptor);
-}
-
-int FileSystem::FileTableIndex() { return kernel->currentThread->processID; };
 
 #endif // FILESYS_STUB

@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments help bubble_sort
+PROGRAMS = add halt shell matmult sort segments
 endif
 
 all: $(PROGRAMS)
@@ -125,36 +125,6 @@ halt.o: halt.c
 halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	$(COFF2NOFF) halt.coff halt
-
-readnum.o: readnum.c
-	$(CC) $(CFLAGS) -c readnum.c
-readnum: readnum.o start.o
-	$(LD) $(LDFLAGS) start.o readnum.o -o readnum.coff
-	$(COFF2NOFF) readnum.coff readnum
-
-char_t.o: char_t.c
-	$(CC) $(CFLAGS) -c char_t.c
-char_t: char_t.o start.o
-	$(LD) $(LDFLAGS) start.o char_t.o -o char_t.coff
-	$(COFF2NOFF) char_t.coff char_t
-
-random_num.o: random_num.c
-	$(CC) $(CFLAGS) -c random_num.c
-random_num: random_num.o start.o
-	$(LD) $(LDFLAGS) start.o random_num.o -o random_num.coff
-	$(COFF2NOFF) random_num.coff random_num
-
-ascii_prog.o: ascii_prog.c
-	$(CC) $(CFLAGS) -c ascii_prog.c
-ascii_prog: ascii_prog.o start.o
-	$(LD) $(LDFLAGS) start.o ascii_prog.o -o ascii_prog.coff
-	$(COFF2NOFF) ascii_prog.coff ascii_prog
-
-string_t.o: string_t.c
-	$(CC) $(CFLAGS) -c string_t.c
-string_t: string_t.o start.o
-	$(LD) $(LDFLAGS) start.o string_t.o -o string_t.coff
-	$(COFF2NOFF) string_t.coff string_t
 
 add.o: add.c
 	$(CC) $(CFLAGS) -c add.c
@@ -187,11 +157,41 @@ matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	$(COFF2NOFF) matmult.coff matmult
 
+createfile.o: createfile.c
+	$(CC) $(CFLAGS) -c createfile.c
+createfile: createfile.o start.o
+	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
+	$(COFF2NOFF) createfile.coff createfile
+
+num.o: num.c
+	$(CC) $(CFLAGS) -c num.c
+num: num.o start.o
+	$(LD) $(LDFLAGS) start.o num.o -o num.coff
+	$(COFF2NOFF) num.coff num
+
+ch.o: ch.c
+	$(CC) $(CFLAGS) -c ch.c
+ch: ch.o start.o
+	$(LD) $(LDFLAGS) start.o ch.o -o ch.coff
+	$(COFF2NOFF) ch.coff ch
+
+st.o: st.c
+	$(CC) $(CFLAGS) -c st.c
+st: st.o start.o
+	$(LD) $(LDFLAGS) start.o st.o -o st.coff
+	$(COFF2NOFF) st.coff st
+
 help.o: help.c
 	$(CC) $(CFLAGS) -c help.c
 help: help.o start.o
 	$(LD) $(LDFLAGS) start.o help.o -o help.coff
 	$(COFF2NOFF) help.coff help
+
+ascii.o: ascii.c
+	$(CC) $(CFLAGS) -c ascii.c
+ascii: ascii.o start.o
+	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
+	$(COFF2NOFF) ascii.coff ascii
 
 bubble_sort.o: bubble_sort.c
 	$(CC) $(CFLAGS) -c bubble_sort.c
@@ -199,23 +199,17 @@ bubble_sort: bubble_sort.o start.o
 	$(LD) $(LDFLAGS) start.o bubble_sort.o -o bubble_sort.coff
 	$(COFF2NOFF) bubble_sort.coff bubble_sort
 
-create.o: create.c
-	$(CC) $(CFLAGS) -c create.c
-create: create.o start.o
-	$(LD) $(LDFLAGS) start.o create.o -o create.coff
-	$(COFF2NOFF) create.coff create
+openclosefile.o: openclosefile.c
+	$(CC) $(CFLAGS) -c openclosefile.c
+openclosefile: openclosefile.o start.o
+	$(LD) $(LDFLAGS) start.o openclosefile.o -o openclosefile.coff
+	$(COFF2NOFF) openclosefile.coff openclosefile
 
-open.o: open.c
-	$(CC) $(CFLAGS) -c open.c
-open: open.o start.o
-	$(LD) $(LDFLAGS) start.o open.o -o open.coff
-	$(COFF2NOFF) open.coff open
-
-open_file.o: open_file.c
-	$(CC) $(CFLAGS) -c open_file.c
-open_file: open_file.o start.o
-	$(LD) $(LDFLAGS) start.o open_file.o -o open_file.coff
-	$(COFF2NOFF) open_file.coff open_file
+readwrite.o: readwrite.c
+	$(CC) $(CFLAGS) -c readwrite.c
+readwrite: readwrite.o start.o
+	$(LD) $(LDFLAGS) start.o readwrite.o -o readwrite.coff
+	$(COFF2NOFF) readwrite.coff readwrite
 
 cat.o: cat.c
 	$(CC) $(CFLAGS) -c cat.c
@@ -223,17 +217,17 @@ cat: cat.o start.o
 	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
 	$(COFF2NOFF) cat.coff cat
 
-delete.o: delete.c
-	$(CC) $(CFLAGS) -c delete.c
-delete: delete.o start.o
-	$(LD) $(LDFLAGS) start.o delete.o -o delete.coff
-	$(COFF2NOFF) delete.coff delete
-
 copy.o: copy.c
 	$(CC) $(CFLAGS) -c copy.c
 copy: copy.o start.o
 	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
 	$(COFF2NOFF) copy.coff copy
+
+delete.o: delete.c
+	$(CC) $(CFLAGS) -c delete.c
+delete: delete.o start.o
+	$(LD) $(LDFLAGS) start.o delete.o -o delete.coff
+	$(COFF2NOFF) delete.coff delete
 
 concatenate.o: concatenate.c
 	$(CC) $(CFLAGS) -c concatenate.c

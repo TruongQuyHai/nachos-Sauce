@@ -1,67 +1,31 @@
+/**
+ * @file readwrite.c
+ * @author Team Nachos - Sauce
+ * @brief A file to test Read (file / console) and Write (file / console) syscalls
+ * @date 2022-05-05
+ */
+
 #include "syscall.h"
-
-#define MODE_READWRITE 0
-#define MODE_READ 1
-
 #define stdin 0
 #define stdout 1
 
+#define MAX_TOTAL_BUFFER_SIZE 800
+
+// TODO: Test more edge cases
 int main()
 {
-    char buffer[100];
-    int i;
-    int write;
+  char buffer[MAX_TOTAL_BUFFER_SIZE];
+  char buffer2[MAX_TOTAL_BUFFER_SIZE];
+  OpenFileId id;
 
-    int fileid = Open("some.txt", MODE_READ);
-    int read = Read(buffer, 50, fileid);
-    int len = 0;
-    while (buffer[len] != '\0')
-        ++len;
-    PrintString("Read ");
-    PrintNum(len);
-    PrintString(" characters: ");
-    PrintString(buffer);
-    PrintString("\n");
-    Close(fileid);
+  id = Open("test_read.txt");
+  Read(buffer, 20, id);  // read 20 first characters of file into buffer
+  Seek(0, id);           // seek to the beginning of the file
+  Read(buffer2, 20, id); // read 20 first characters of file into buffer2
 
-    fileid = Open("some1.txt", MODE_READWRITE);
-    write = Write(buffer, len, fileid);
-
-    PrintString("Write ");
-    PrintNum(write);
-    PrintString(" characters: ");
-    PrintString(buffer);
-    PrintString("\n");
-    Close(fileid);
-
-    fileid = Open("some2.txt", MODE_READWRITE);
-    read = Read(buffer, 50, fileid);
-    len = 0;
-    while (buffer[len] != '\0')
-        ++len;
-
-    PrintString("Read ");
-    PrintNum(len);
-    PrintString(" characters: ");
-    PrintString(buffer);
-    PrintString("\n");
-    // Write to the same file
-    write = Write(buffer, len, fileid);
-    PrintString("Write ");
-    PrintNum(write);
-    PrintString(" characters: ");
-    PrintString(buffer);
-    PrintString("\n");
-    Close(fileid);
-
-    PrintString("Type a string (use ctrl+D to end typing):\n");
-    for (i = 0; i < len; ++i)
-    {
-        buffer[i] = 0;
-    }
-    Read(buffer, 50, stdin);
-    len = 0;
-    while (buffer[len] != '\0')
-        ++len;
-    PrintNum(Write(buffer, len, stdout));
+  // write buffer & buffer2 to stdout
+  Write(buffer, 20, stdout);
+  Write(buffer2, 20, stdout);
+  PrintChar('\n');
+  Halt();
 }

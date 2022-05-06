@@ -1,24 +1,33 @@
-#include "syscall.h"
+/**
+ * @file createfile.c
+ * @author Team Nachos - Sauce
+ * @brief Test Delete file syscall
+ * @date 2022-05-05
+ */
 
-#define MAX_LENGTH 32
+#include "syscall.h"
+#define MAX_FILE_NAME_LENGTH 32
 
 int main()
 {
-    char fileName[MAX_LENGTH];
-    int filenameLength;
+  int status;
+  char filename[MAX_FILE_NAME_LENGTH];
 
-    PrintString("Nhập chiều dài của tên file: ");
-    filenameLength = ReadNum();
+  PrintString("Input file name you want to remove: ");
+  ReadString(filename, MAX_FILE_NAME_LENGTH);
+  status = Remove(filename);
+  if (status == -1)
+  {
+    PrintString("Some error occurred when trying to remove ");
+    PrintString(filename);
+    PrintChar('\n');
+  }
+  else
+  {
+    PrintString("Remove file: ");
+    PrintString(filename);
+    PrintString(" successfully\n");
+  }
 
-    PrintString("Nhập tên file cần đọc\n");
-    ReadString(fileName, filenameLength);
-    if (Remove(fileName) == 0)
-    {
-        PrintString("Remove file successfully\n");
-    }
-    else
-    {
-        PrintString("failed to remove file\n");
-    }
-    Halt();
+  Halt();
 }

@@ -99,63 +99,63 @@ Create:
 	.end Create
 
 	.globl ReadNum
-	.ent ReadNum
+	.ent	ReadNum
 ReadNum:
 	addiu $2,$0,SC_ReadNum
 	syscall
-	j $31
+	j	$31
 	.end ReadNum
 
-	.globl PrintNum
-	.ent PrintNum
-PrintNum:
-	addiu $2,$0,SC_PrintNum
-	syscall
-	j $31
-	.end PrintNum
-
-	.globl PrintChar
-	.ent PrintChar
-PrintChar:
-	addiu $2,$0,SC_PrintChar
-	syscall
-	j $31
-	.end PrintChar
-
 	.globl ReadChar
-	.ent ReadChar
+	.ent	ReadChar
 ReadChar:
 	addiu $2,$0,SC_ReadChar
 	syscall
-	j $31
+	j	$31
 	.end ReadChar
 
+	.globl PrintNum
+	.ent	PrintNum
+PrintNum:
+	addiu $2,$0,SC_PrintNum
+	syscall
+	j	$31
+	.end PrintNum
+
+	.globl PrintChar
+	.ent	PrintChar
+PrintChar:
+	addiu $2,$0,SC_PrintChar
+	syscall
+	j	$31
+	.end PrintChar
+
 	.globl RandomNum
-	.ent RandomNum
+	.ent	RandomNum
 RandomNum:
 	addiu $2,$0,SC_RandomNum
 	syscall
-	j $31
+	j	$31
 	.end RandomNum
 
 	.globl ReadString
-	.ent ReadString
+	.ent	ReadString
 ReadString:
 	addiu $2,$0,SC_ReadString
 	syscall
-	j $31
+	j	$31
 	.end ReadString
 
 	.globl PrintString
-	.ent PrintString
+	.ent	PrintString
 PrintString:
 	addiu $2,$0,SC_PrintString
 	syscall
-	j $31
+	j	$31
 	.end PrintString
 
 	.globl Remove
-	.ent Remove
+	.ent	Remove
 Remove:
 	addiu $2,$0,SC_Remove
 	syscall

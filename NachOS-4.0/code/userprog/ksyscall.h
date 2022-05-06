@@ -12,302 +12,207 @@
 #define __USERPROG_KSYSCALL_H__
 
 #include "kernel.h"
-#include "synchconsole.h"
-#include <stdlib.h>
 
-#define LF ((char)10)
-#define CR ((char)13)
-#define TAB ((char)9)
-#define SPACE ((char)' ')
+/**
+ * Utility functions
+ */
+#define CR (char)13
+#define LF (char)10
+#define TAB (char)9
+#define SPACE ' '
 
-#define MAX_NUM_LENGTH 11
-char numBuffer[MAX_NUM_LENGTH + 2];
+bool isEnter(char c)
+{
+  return c == CR || c == LF;
+}
+
+/**
+ * @brief Create a buffer with size limit + 1 and initializes it with NULL
+ *
+ * @param int limit
+ * @return char*
+ */
+char *assignBuffer(int limit)
+{
+  char *buffer = NULL;
+  buffer = new char[limit + 1]{0};
+  if (buffer == NULL)
+    return NULL;
+
+  return buffer;
+}
+
+bool isEmptyString(char *buffer)
+{
+  return buffer == NULL || strlen(buffer) == 0;
+}
+
+bool isIntMin(char *buffer)
+{
+  return strcmp(buffer, "-2147483648") == 0;
+}
+
+bool isNegative(char *numBuffer)
+{
+  return numBuffer[0] == '-';
+}
+
+bool isNegative(int num)
+{
+  return num < 0;
+}
+
+bool isNotNumber(char c)
+{
+  return c < '0' || c > '9';
+}
+
+bool isSpace(char c)
+{
+  return c == CR || c == LF || c == TAB || c == SPACE;
+}
+
+/**
+ * @brief Check whether the buffer is equal the number
+ *          Help in checking overflow or underflow
+ *
+ * @param char* buffer
+ * @param bool _isNegative
+ * @param int number
+ * @return true if two numbers are equal, false if two numbers are not equal
+ */
+bool isStringTheSameWithNumber(char *buffer, bool _isNegative, int number)
+{
+  int i;
+  if (_isNegative)
+  {
+    number = -number;
+  }
+
+  for (i = strlen(buffer) - 1; i >= _isNegative; i--)
+  {
+    if ((int)(buffer[i] - '0') != (number % 10))
+    {
+      return false;
+    }
+    number /= 10;
+  }
+  return true;
+}
 
 void SysHalt()
 {
   kernel->interrupt->Halt();
 }
 
-bool isEnter(char c) { return c == LF || c == CR; }
-
-bool isBlank(char c) { return c == LF || c == CR || c == TAB || c == SPACE; }
-
-void readRemainingConsoleInput()
-{
-  char c = kernel->synchConsoleIn->GetChar();
-  while (!(isEnter(c)))
-  {
-    c = kernel->synchConsoleIn->GetChar();
-  }
-}
-
-void SysHaltWithMessage(string message)
-{
-  readRemainingConsoleInput();
-  DEBUG(dbgSys, message);
-  cerr << message;
-  SysHalt();
-}
-
-int ReadNumFromConsole()
-{
-  memset(numBuffer, '\0', sizeof(numBuffer));
-  char c = kernel->synchConsoleIn->GetChar();
-  while (c == EOF)
-  {
-    c = kernel->synchConsoleIn->GetChar();
-  }
-
-  if (isBlank(c))
-  {
-    c = kernel->synchConsoleIn->GetChar();
-  }
-
-  int i = 0;
-  while (!isEnter(c))
-  {
-    numBuffer[i++] = c;
-    if (i == 1 && c == '-')
-    {
-      c = kernel->synchConsoleIn->GetChar();
-      continue;
-    }
-    else if (i > 1)
-    {
-      if (c == '-')
-        SysHaltWithMessage("Unexpected '-' sign. \n");
-      else if (isBlank(c))
-        SysHaltWithMessage("Unexpected white-space. \n");
-      else if (i > MAX_NUM_LENGTH)
-      {
-        SysHaltWithMessage("Number is too long, overflow!!!\n");
-      }
-    }
-    else if (((int)c < (int)'0') || ((int)c > (int)'9'))
-    {
-      SysHaltWithMessage("Number expected!!!\n");
-    }
-
-    c = kernel->synchConsoleIn->GetChar();
-  }
-  // while (!(isBlank(c)) || c == EOF)
-  // {
-  //   numBuffer[i++] = c;
-  //   if (i == 1 && c == '-')
-  //   {
-  //     c = kernel->synchConsoleIn->GetChar();
-  //     continue;
-  //   }
-  //   else if (i > 1 && c == '-')
-  //   {
-  //     SysHaltWithMessage("Unexpected '-' sign. \n");
-  //   }
-  //   else if (((int)c < (int)'0') || ((int)c > (int)'9'))
-  //   {
-  //     SysHaltWithMessage("Number expected!!!\n");
-  //   }
-  //   else if (i > MAX_NUM_LENGTH)
-  //   {
-  //     SysHaltWithMessage("Number is too long, overflow!!!\n");
-  //   }
-  //   c = kernel->synchConsoleIn->GetChar();
-  // }
-  return 1;
-}
-
-/**
- * This function read a sequence of characters from the console and convert to a number
- * @return number
- */
-int ReadNumSys()
-{
-  // if users input 0 or some errors occur => return 0
-  if (ReadNumFromConsole() == 0)
-  {
-    return 0;
-  }
-  // handle INT32_MIN because INT32_MIN can not be converted from positive number
-  // 214783647 < 2147483648
-  if (strcmp(numBuffer, "-2147483648") == 0)
-  {
-    return INT32_MIN;
-  }
-  int num = 0;
-  bool isNegative = numBuffer[0] == '-';
-  // if not negative then store the first number of the numBuffer to num
-  if (!isNegative)
-  {
-    num = numBuffer[0] - '0';
-  }
-
-  // run loop from 1 -> strlen and add to num the correct amount
-  for (int i = 1; i < (int)strlen(numBuffer); i++)
-  {
-    num = num * 10 + (numBuffer[i] - '0');
-  }
-  // if is negative, inverse the number. because we already handle the INT32_MIN => no overflow
-  if (isNegative)
-  {
-    num = -num;
-  }
-
-  // if isNegative but num > 0 => overflow => return 0
-  // if not isNegative but num < 0 => overflow => return 0
-  if ((isNegative && num > 0) || (!isNegative && num < 0))
-  {
-    DEBUG(dbgSys, "INT32 expected, " << numBuffer << " found");
-    return 0;
-  }
-
-  // if negative -> inverse
-  int numTemp = isNegative ? -num : num;
-  // compare number numTemp to numBuffer
-  // if different => some errors occurred => return 0
-  for (int i = strlen(numBuffer) - 1; i >= isNegative; i--)
-  {
-    if ((numBuffer[i] - '0') != (numTemp % 10))
-    {
-      return 0;
-    }
-    numTemp = numTemp / 10;
-  }
-
-  return num;
-}
-
-/**
- * Function print number to console
- * @param number
- */
-void PrintNumSys(int number)
-{
-  if (number == 0)
-  {
-    kernel->synchConsoleOut->PutChar('0');
-    return;
-  }
-
-  // handle INT32_MIN case to prevent overflow
-  if (number == INT32_MIN)
-  {
-    for (int i = 0; i < 11; i++)
-    {
-      kernel->synchConsoleOut->PutChar("-2147483648"[i]);
-    }
-    return;
-  }
-
-  // if number < 0 => inverse and print to console '-'
-  if (number < 0)
-  {
-    kernel->synchConsoleOut->PutChar('-');
-    number = -number;
-  }
-
-  int i = 0;
-  while (number)
-  {
-    numBuffer[i++] = (number % 10) + '0';
-    number /= 10;
-  }
-
-  // print the number part
-  for (int j = i - 1; j >= 0; j--)
-  {
-    kernel->synchConsoleOut->PutChar(numBuffer[j]);
-  }
-}
-
-void PrintCharSys(char character)
-{
-  kernel->synchConsoleOut->PutChar(character);
-}
-
-// this function prints system string
-void PrintStringSys(char *buffer, int length)
-{
-  // use for loop to print each character of the string
-  for (int i = 0; i < length; i++)
-  {
-    kernel->synchConsoleOut->PutChar(buffer[i]);
-  }
-}
-
-// this function generates random integer
-int RandomNumSys() { return random(); }
-
-// this function reads system char
-char ReadCharSys() { return kernel->synchConsoleIn->GetChar(); }
-
-// this function reads system string
-char *ReadStringSys(int length)
-{
-  char *buffer = new char[length + 1];
-
-  // use for loop and ReadCharSys from above to append all characters of the string
-  for (int i = 0; i < length; i++)
-  {
-    buffer[i] = ReadCharSys();
-  }
-  // appending whitespace at the end of the string
-  buffer[length] = '\0';
-  return buffer;
-}
-
-int CreateSys(char *fileName)
-{
-  if (strlen(fileName) == 0 || fileName == NULL || !kernel->fileSystem->Create(fileName))
-  {
-    return -1;
-  }
-  return 0;
-}
-
-int OpenSys(char *fileName, int type)
-{
-  if (type != 0 && type != 1)
-    return -1;
-
-  int id = kernel->fileSystem->Open(fileName, type);
-  if (id == -1)
-    return -1;
-  DEBUG(dbgSys, "\nOpened file");
-  return id;
-}
-
-int ReadSys(char *buffer, int charCount, int fileId)
-{
-  if (fileId == 0)
-  {
-    return kernel->synchConsoleIn->GetString(buffer, charCount);
-  }
-  return kernel->fileSystem->Read(buffer, charCount, fileId);
-}
-
-int SeekSys(int seekPos, int fileId)
-{
-  if (fileId <= 1)
-  {
-    DEBUG(dbgSys, "\nCan't seek in console");
-    return -1;
-  }
-  return kernel->fileSystem->Seek(seekPos, fileId);
-}
-
-int WriteSys(char *buffer, int charCount, int fileId)
-{
-  if (fileId == 1)
-  {
-    return kernel->synchConsoleOut->PutString(buffer, charCount);
-  }
-  return kernel->fileSystem->Write(buffer, charCount, fileId);
-}
-
-int SysClose(int id) { return kernel->fileSystem->Close(id); }
-
 int SysAdd(int op1, int op2)
 {
   return op1 + op2;
 }
+
+/**
+ * @brief copy user memory to system memory
+ *
+ * @param int virtAddr
+ * @param int limit
+ * @return char*
+ */
+char *User2System(int virtAddr, int limit = -1)
+{
+  int i = 0;
+  int oneChar;
+  int length = 0;
+  char *kernelBuf;
+
+  if (limit > 0)
+  {
+    kernelBuf = assignBuffer(limit);
+    if (kernelBuf == NULL)
+      return NULL;
+    for (; i < limit; i++)
+    {
+      kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
+      kernelBuf[i] = (char)oneChar;
+    }
+    kernelBuf[i] = '\0';
+    return kernelBuf;
+  }
+
+  do
+  {
+    kernel->machine->ReadMem(virtAddr + length, 1, &oneChar);
+    length++;
+  } while (oneChar != 0);
+  kernelBuf = assignBuffer(length);
+  for (; i < length; i++)
+  {
+    kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
+    kernelBuf[i] = (char)oneChar;
+  }
+  kernelBuf[i] = '\0';
+  return kernelBuf;
+}
+
+/**
+ * @brief Copy system memory to user memory
+ *
+ * @param int virtAddr
+ * @param int len
+ * @param char* buffer
+ * @return int
+ */
+int System2User(int virtAddr, int len, char *buffer)
+{
+  if (len < 0)
+    return -1;
+  if (len == 0)
+    return 0;
+
+  int i = 0;
+  int oneChar;
+  do
+  {
+    oneChar = (int)buffer[i];
+    kernel->machine->WriteMem(virtAddr + i, 1, oneChar);
+    i++;
+  } while (i < len);
+  kernel->machine->WriteMem(virtAddr + i, 1, 0);
+  return i;
+}
+
+void modifyReturnPoint()
+{
+  kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+  kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+  kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+}
+
+/**
+ * Utility functions
+ */
+
+/**
+ * declare functions that is defined in exception.cc
+ */
+void handleSC_Halt();
+void handleSC_Add();
+void handleSC_Create();
+void modifyReturnPoint();
+void handleSC_ReadNum();
+void handleSC_PrintNum();
+void handleSC_ReadChar();
+void handleSC_PrintChar();
+void handleSC_RandomNum();
+void handleSC_ReadString();
+void handleSC_PrintString();
+void handleSC_Open();
+void handleSC_Close();
+void handleSC_Remove();
+void handleSC_Read();
+void handleSC_Write();
+void handleSC_Seek();
+/**
+ * declare functions that is defined in exception.cc
+ */
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */

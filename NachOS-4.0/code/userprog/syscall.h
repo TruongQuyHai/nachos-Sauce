@@ -65,14 +65,6 @@ void Halt();
 
 int Add(int op1, int op2);
 
-int ReadNum();
-
-int RandomNum();
-
-char ReadChar();
-
-void ReadString(char *buffer, int length);
-
 /* Address space control operations: Exit, Exec, Execv, and Join */
 
 /* This user program is done (status = 0 means exited normally). */
@@ -123,16 +115,74 @@ typedef int OpenFileId;
 
 /* Create a Nachos file, with name "name" */
 /* Note: Create does not open the file.   */
-/* Return 1 on success, negative error code on failure */
+/* Return 0 on success, -1 on failure */
 int Create(char *name);
 
-/* Remove a Nachos file, with name "name" */
+/**
+ * @brief  Read an integer from the console,
+ *          if not an integer then return 0
+ * @return an integer value
+ */
+int ReadNum();
+
+/**
+ * @brief Print number to console
+ * @param int number
+ */
+void PrintNum(int number);
+
+/**
+ * @brief Read a character from console
+ * @return a character
+ */
+char ReadChar();
+
+/**
+ * @brief Print charactrer to console
+ * @param char c
+ */
+void PrintChar(char c);
+
+/**
+ * @brief Generate random number
+ *        from the RandomNumber() function that OS support
+ * @return {int} random number
+ */
+int RandomNum();
+
+/**
+ * @brief Read a user input string
+ * @param char buffer
+ * @param int length
+ */
+void ReadString(char *buffer, int length);
+
+/**
+ * @brief Print string buffer to console
+ * @param char* buffer
+ */
+void PrintString(char *buffer);
+
+/**
+ * @brief Open a file and return file id
+ * @param char* name
+ * @return OpenFileId
+ */
+OpenFileId Open(char *name);
+
+/**
+ * @brief Delete a file and return -1 on failure, 0 on success
+ * @param char* name
+ * @return int
+ */
 int Remove(char *name);
 
-/* Open the Nachos file "name", and return an "OpenFileId" that can
- * be used to read and write to the file.
+/**
+ * @brief Close a file and return fail = -1, success = 0
+ * @param OpenFileId id
+ * @return int
  */
-OpenFileId Open(char *name, int type);
+int Close(OpenFileId id);
 
 /* Write "size" bytes from "buffer" to the open file.
  * Return the number of bytes actually read on success.
@@ -152,11 +202,6 @@ int Read(char *buffer, int size, OpenFileId id);
  * to the byte "position".
  */
 int Seek(int position, OpenFileId id);
-
-/* Close the file, we're done reading and writing to it.
- * Return 1 on success, negative error code on failure
- */
-int Close(OpenFileId id);
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program.

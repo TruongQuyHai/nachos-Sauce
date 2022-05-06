@@ -23,10 +23,11 @@
 class SynchConsoleInput : public CallBackObj
 {
 public:
-  SynchConsoleInput(char *inputFile);    // Initialize the console device
-  ~SynchConsoleInput();                  // Deallocate console device
-  int GetString(char *buffer, int size); // Read characters into buffer
-  char GetChar();                        // Read a character, waiting if necessary
+  SynchConsoleInput(char *inputFile); // Initialize the console device
+  ~SynchConsoleInput();               // Deallocate console device
+
+  char GetChar(); // Read a character, waiting if necessary
+  int Read(char *buffer, int size);
 
 private:
   ConsoleInput *consoleInput; // the hardware keyboard
@@ -42,8 +43,8 @@ public:
   SynchConsoleOutput(char *outputFile); // Initialize the console device
   ~SynchConsoleOutput();
 
-  void PutChar(char ch);                 // Write a character, waiting if necessary
-  int PutString(char *buffer, int size); // Write characters from buffer
+  void PutChar(char ch); // Write a character, waiting if necessary
+  int Write(char *buffer, int size);
 
 private:
   ConsoleOutput *consoleOutput; // the hardware display
@@ -52,5 +53,7 @@ private:
 
   void CallBack(); // called when more data can be written
 };
+
+// bool isEnter(char c);
 
 #endif // SYNCHCONSOLE_H

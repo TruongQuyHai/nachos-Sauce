@@ -36,9 +36,9 @@
 #include "copyright.h"
 #include "sysdep.h"
 #include "openfile.h"
-#include "filetable.h"
+#include "syscall.h"
 
-#define MAX_PROCESS 10
+#define MAX_FILE 20
 
 #ifdef FILESYS_STUB // Temporarily implement file system calls as
 // calls to UNIX, until the real file system
@@ -46,71 +46,104 @@
 class FileSystem
 {
 public:
-	FileTable **fileTable;
-
-	FileSystem()
+	FileSystem(bool format = false)
 	{
-		fileTable = new FileTable *[MAX_PROCESS];
-		for (int i = 0; i < MAX_PROCESS; i++)
-		{
-			fileTable[i] = new FileTable;
-		}
+		this->openedFiles = new OpenFile *[MAX_FILE];
+		for (int i = 0; i < MAX_FILE; i++)
+			this->openedFiles[i] = NULL;
+
+		this->Create("stdin", 0);
+		this->Create("stdout", 0);
+		this->openedFiles[_ConsoleInput] = this->Open("stdin");
+		this->openedFiles[_ConsoleOutput] = this->Open("stdout");
 	}
 
 	~FileSystem()
 	{
-		for (int i = 0; i < MAX_PROCESS; i++)
+		for (int i = 0; i < MAX_FILE; i++)
 		{
-			delete fileTable[i];
+			delete this->openedFiles[i];
 		}
-		delete[] fileTable;
+		delete[] this->openedFiles;
 	}
 
-	bool Create(char *name)
+	OpenFile *GetStdIn()
+	{
+		return this->openedFiles[_ConsoleInput];
+	}
+
+	OpenFile *GetStdOut()
+	{
+		return this->openedFiles[_ConsoleOutput];
+	}
+
+	OpenFile *GetOpenFile(OpenFileId id)
+	{
+		if (id < 0 || id >= MAX_FILE)
+		{
+			return NULL;
+		}
+		return this->openedFiles[id];
+	}
+
+	bool Create(char *name, int initialSize)
 	{
 		int fileDescriptor = OpenForWrite(name);
-
 		if (fileDescriptor == -1)
 			return FALSE;
 		Close(fileDescriptor);
 		return TRUE;
 	}
 
-	OpenFile *Open(char *name);
-
-	int FileTableIndex();
-
-	void Renew(int id)
+	// Find free slot, returns -1 if not found
+	int FindNextFreeSlot()
 	{
-		for (int i = 0; i < FILE_MAX; i++)
+		for (int i = 0; i < MAX_FILE; i++)
 		{
-			fileTable[id]->Remove(i);
+			if (this->openedFiles[i] == NULL)
+			{
+				return i;
+			}
 		}
+		return -1;
 	}
 
-	int Open(char *name, int openMode)
+	OpenFileId OpenF(char *name)
 	{
-		return fileTable[FileTableIndex()]->Insert(name, openMode);
+		int i = FindNextFreeSlot();
+		this->openedFiles[i] = this->Open(name);
+
+		// if there is no free slot or can't open the file return -1
+		if (i == -1 || this->openedFiles[i] == NULL)
+		{
+			return -1;
+		}
+		return i;
 	}
 
-	int Close(int id) { return fileTable[FileTableIndex()]->Remove(id); }
-
-	int Read(char *buffer, int charCount, int id)
+	int Close(int openFileID)
 	{
-		return fileTable[FileTableIndex()]->Read(buffer, charCount, id);
+		if (this->openedFiles[openFileID] == NULL)
+			return -1;
+		delete this->openedFiles[openFileID];
+		this->openedFiles[openFileID] = NULL;
+		return 0;
 	}
 
-	int Write(char *buffer, int charCount, int id)
+	OpenFile *Open(char *name)
 	{
-		return fileTable[FileTableIndex()]->Write(buffer, charCount, id);
-	}
+		int fileDescriptor = OpenForReadWrite(name, FALSE);
 
-	int Seek(int position, int id)
-	{
-		return fileTable[FileTableIndex()]->Seek(position, id);
+		if (fileDescriptor == -1)
+			return NULL;
+		return new OpenFile(fileDescriptor);
 	}
 
 	bool Remove(char *name) { return Unlink(name) == 0; }
+
+private:
+	// OpenFile *freeMapFile;
+	OpenFile **openedFiles;
 };
 
 #else // FILESYS
@@ -118,11 +151,11 @@ class FileSystem
 {
 public:
 	FileSystem(bool format); // Initialize the file system.
-							 // Must be called *after* "synchDisk"
-							 // has been initialized.
-							 // If "format", there is nothing on
-							 // the disk, so initialize the directory
-							 // and the bitmap of free blocks.
+													 // Must be called *after* "synchDisk"
+													 // has been initialized.
+													 // If "format", there is nothing on
+													 // the disk, so initialize the directory
+													 // and the bitmap of free blocks.
 
 	bool Create(char *name, int initialSize);
 	// Create a file (UNIX creat)
@@ -137,9 +170,9 @@ public:
 
 private:
 	OpenFile *freeMapFile;	 // Bit map of free disk blocks,
-							 // represented as a file
+													 // represented as a file
 	OpenFile *directoryFile; // "Root" directory -- list of
-							 // file names, represented as a file
+													 // file names, represented as a file
 };
 
 #endif // FILESYS

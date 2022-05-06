@@ -52,23 +52,21 @@ char SynchConsoleInput::GetChar()
     return ch;
 }
 
-//----------------------------------------------------------------------
-// SynchConsoleInput::GetString
-//      Read a string from keyboard to buffer, return number of read characters.
-//----------------------------------------------------------------------
-
-int SynchConsoleInput::GetString(char *buffer, int size)
+int SynchConsoleInput::Read(char *into, int size)
 {
-    for (int i = 0; i < size; ++i)
+    char c;
+    int j = 0;
+
+    do
     {
-        buffer[i] = GetChar();
-        if (buffer[i] == EOF)
-        {
-            buffer[i] = 0;
-            return -2;
-        }
-    }
-    return size;
+        c = this->GetChar();
+        if ((c == (char)13 || c == (char)10))
+            break;
+        into[j++] = c;
+    } while (!(c == (char)13 || c == (char)10) && j < size);
+    into[j] = 0;
+
+    return j;
 }
 
 //----------------------------------------------------------------------
@@ -122,16 +120,12 @@ void SynchConsoleOutput::PutChar(char ch)
     lock->Release();
 }
 
-//----------------------------------------------------------------------
-// SynchConsoleOutput::PutString
-//      Write a string to the console display, return number of written
-//      charaters.
-//----------------------------------------------------------------------
-
-int SynchConsoleOutput::PutString(char *buffer, int size)
+int SynchConsoleOutput::Write(char *buffer, int size)
 {
-    for (int i = 0; i < size; ++i)
-        PutChar(buffer[i]);
+    for (int i = 0; i < size; i++)
+    {
+        this->PutChar(buffer[i]);
+    }
     return size;
 }
 

@@ -1,22 +1,3 @@
-// exception.cc
-//	Entry point into the Nachos kernel from user programs.
-//	There are two kinds of things that can cause control to
-//	transfer back to here from user code:
-//
-//	syscall -- The user code explicitly requests to call a procedure
-//	in the Nachos kernel.  Right now, the only function we support is
-//	"Halt".
-//
-//	exceptions -- The user code does something that the CPU can't handle.
-//	For instance, accessing memory that doesn't exist, arithmetic errors,
-//	etc.
-//
-//	Interrupts (which can also cause control to transfer from user
-//	code into the Nachos kernel) are handled elsewhere.
-//
-// For now, this only handles the Halt() system call.
-// Everything else core dumps.
-//
 // Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
@@ -25,6 +6,10 @@
 #include "main.h"
 #include "syscall.h"
 #include "ksyscall.h"
+#include "synchconsole.h"
+
+#define MaxFileLength 32
+#define MaxIntBufferLength 12 // an int can hold 11 number and the '-' character
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -48,352 +33,484 @@
 //	is in machine.h.
 //----------------------------------------------------------------------
 
-// Modify return point
-// This code is adapted from `../machine/mipssim.cc`, line 667
-void ModifyReturnPoint()
-{
-	/* set previous program counter (debugging only)*/
-	kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
-
-	/* set program counter to next instruction (all Instructions are 4 byte wide)*/
-	kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-
-	/* set next program counter for brach execution */
-	kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
-}
-
-// this function converts user string to system string
-// return char*
-char *convertStringUserToSystem(int address, int max_length = -1)
-{
-	char *str;
-	int length = 0;
-	bool end = false;
-
-	do
-	{
-		int character;
-		kernel->machine->ReadMem(address + length, 1, &character);
-		length++;
-		// stop the loop when length == -1 or reaching max length of the covert string
-		end = ((character == '\0' && max_length == -1) || length == max_length);
-	} while (!end);
-
-	str = new char[length];
-	for (int i = 0; i < length; i++)
-	{
-		int character;
-		// copy character to kernel space
-		kernel->machine->ReadMem(address + i, 1, &character);
-		str[i] = (unsigned char)character;
-	}
-	return str;
-}
-
-#define MAX_READ_STRING_LENGTH 255
-/**
- * Convert system string to user string
- *
- * 'str' string to convert
- * 'addr' addess of user string
- * 'convert_length' set max length of string to convert, leave
- * blank to convert all characters of system string
- */
-void convertSysStringToUser(char *str, int addr, int convert_length = -1)
-{
-	int length = (convert_length == -1 ? strlen(str) : convert_length);
-
-	// use for loop to copy characters to user space
-	for (int i = 0; i < length; i++)
-	{
-		kernel->machine->WriteMem(addr + i, 1, str[i]);
-	}
-	kernel->machine->WriteMem(addr + length, 1, '\0');
-}
-
 void ExceptionHandler(ExceptionType which)
 {
-	int type = kernel->machine->ReadRegister(2);
+  int type = kernel->machine->ReadRegister(2);
 
-	// DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
+  DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
 
-	switch (which)
-	{
-	// no exception: return the control to the operating system
-	case NoException:
-	{
-		kernel->interrupt->setStatus(SystemMode);
-		DEBUG(dbgSys, "Change to system mode.\n");
-		break;
-	}
+  switch (which)
+  {
+  case NoException:
+    return;
+  case SyscallException:
+    switch (type)
+    {
+    case SC_Halt:
+    {
+      handleSC_Halt();
+    }
+    case SC_Add:
+    {
+      handleSC_Add();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Create:
+    {
+      handleSC_Create();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_ReadNum:
+    {
+      handleSC_ReadNum();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_PrintNum:
+    {
+      handleSC_PrintNum();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_ReadChar:
+    {
+      handleSC_ReadChar();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_PrintChar:
+    {
+      handleSC_PrintChar();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_RandomNum:
+    {
+      handleSC_RandomNum();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_ReadString:
+    {
+      handleSC_ReadString();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_PrintString:
+    {
+      handleSC_PrintString();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Open:
+    {
+      handleSC_Open();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Close:
+    {
+      handleSC_Close();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Remove:
+    {
+      handleSC_Remove();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Read:
+    {
+      handleSC_Read();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Write:
+    {
+      handleSC_Write();
+      modifyReturnPoint();
+      return;
+    }
+    case SC_Seek:
+    {
+      handleSC_Seek();
+      modifyReturnPoint();
+      return;
+    }
+    default:
+    {
+      cerr << "Unexpected system call " << type << "\n";
+      handleSC_Halt();
+    }
+    }
+  case PageFaultException:
+  case ReadOnlyException:
+  case BusErrorException:
+  case AddressErrorException:
+  case OverflowException:
+  case IllegalInstrException:
+  case NumExceptionTypes:
+  {
+    cerr << "Not implemented exceptions " << which << "\n";
+    handleSC_Halt();
+  }
 
-	// syscall exceptions: user system calls
-	case SyscallException:
-	{
-		switch (type)
-		{
-		case SC_Halt:
-		{
-			DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
-			SysHalt();
-			ASSERTNOTREACHED();
-			break;
-		}
+  default:
+  {
+    cerr << "Unexpected user mode exception" << (int)which << "\n";
+    break;
+  }
+  }
+  ASSERTNOTREACHED();
+}
 
-		case SC_Add:
-		{
-			DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
+void handleSC_Halt()
+{
+  DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
+  SysHalt();
+  ASSERTNOTREACHED();
+}
 
-			/* Process SysAdd Systemcall*/
-			int result;
-			result = SysAdd(/* int op1 */ (int)kernel->machine->ReadRegister(4),
-							/* int op2 */ (int)kernel->machine->ReadRegister(5));
+void handleSC_Add()
+{
+  DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
 
-			DEBUG(dbgSys, "Add returning with " << result << "\n");
+  int result;
+  result = SysAdd((int)kernel->machine->ReadRegister(4),
+                  (int)kernel->machine->ReadRegister(5));
 
-			/* Prepare Result */
-			kernel->machine->WriteRegister(2, (int)result);
+  DEBUG(dbgSys, "Add returning with " << result << "\n");
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  kernel->machine->WriteRegister(2, (int)result);
+}
 
-		case SC_ReadNum:
-		{
-			int result = ReadNumSys();
-			kernel->machine->WriteRegister(2, result);
+// TODO: handle case file already exists
+void handleSC_Create()
+{
+  int virtAddr;
+  char *filename;
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  // get the virtAddr and convert it to filename (char *)
+  virtAddr = kernel->machine->ReadRegister(4);
+  filename = User2System(virtAddr, MaxFileLength);
+  DEBUG(dbgSys, "Inputted file name: " << filename);
 
-		case SC_PrintNum:
-		{
-			int number = kernel->machine->ReadRegister(4);
-			PrintNumSys(number);
+  // If the filename is empty => return error
+  if (isEmptyString(filename))
+  {
+    kernel->machine->WriteRegister(2, -1);
+    modifyReturnPoint();
+    delete[] filename;
+    return;
+  }
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  DEBUG(dbgSys, "Creating file: " << filename);
+  // If Create return false => error
+  if (!kernel->fileSystem->Create(filename, 0))
+  {
+    kernel->machine->WriteRegister(2, -1);
+    modifyReturnPoint();
+    delete[] filename;
+    return;
+  }
 
-		case SC_PrintChar:
-		{
-			char character = kernel->machine->ReadRegister(4);
-			PrintCharSys(character);
+  DEBUG(dbgSys, "Create file successfully");
+  kernel->machine->WriteRegister(2, 0);
+  delete[] filename;
+}
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+/**
+ * @brief read console till enter or limit
+ * @param limit
+ * @return char*
+ */
+char *readConsoleTillLimit(int limit)
+{
+  char c;
+  char *buffer = assignBuffer(limit);
+  int cnt = 0;
 
-		case SC_PrintString:
-		{
-			// read address of C-string
-			int address = kernel->machine->ReadRegister(4);
-			char *buffer = convertStringUserToSystem(address);
-			PrintStringSys(buffer, strlen(buffer));
-			delete[] buffer;
+  do
+  {
+    if (cnt >= limit)
+      return NULL;
+    c = kernel->synchConsoleIn->GetChar();
+    buffer[cnt++] = c;
+  } while (!isEnter(c));
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  buffer[cnt - 1] = '\0';
+  return buffer;
+}
 
-		case SC_RandomNum:
-		{
-			int result;
-			result = RandomNumSys();
-			kernel->machine->WriteRegister(2, result);
+/**
+ * @brief Read number from console
+ * @return int or 0 if invalid
+ */
+int readNumFromConsole()
+{
+  int result = 0;
+  bool _isNegative;
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  // read the string user input until find enter key or till limit
+  char *numBuffer = readConsoleTillLimit(MaxIntBufferLength);
+  if (isEmptyString(numBuffer))
+    return 0;
 
-		case SC_ReadString:
-		{
-			int memPtr = kernel->machine->ReadRegister(4); // read address of C-string
-			int length = kernel->machine->ReadRegister(5); // read length of C-string
-			if (length > MAX_READ_STRING_LENGTH)
-			{ // avoid allocating large memory
-				DEBUG(dbgSys, "String length exceeds " << MAX_READ_STRING_LENGTH);
-				SysHalt();
-			}
-			char *buffer = ReadStringSys(length);
-			convertSysStringToUser(buffer, memPtr);
-			delete[] buffer;
+  // check if the inputted number buffer is negative
+  _isNegative = isNegative(numBuffer);
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  int i = (int)_isNegative;
 
-		case SC_ReadChar:
-		{
-			char result = ReadCharSys();
-			kernel->machine->WriteRegister(2, (int)result);
+  // check for special case
+  if (isIntMin(numBuffer))
+    return -2147483648;
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  for (; i < strlen(numBuffer); i++)
+  {
+    // if there is any character that is not a number => error
+    if (isNotNumber(numBuffer[i]))
+    {
+      cerr << "Please input number only\n";
+      return 0;
+    }
+    // otherwise accumulate the result
+    result = result * 10 + (int)(numBuffer[i] - '0');
+  }
 
-		case SC_Create:
-		{
-			int addr = kernel->machine->ReadRegister(4);
-			char *fileName = convertStringUserToSystem(addr);
-			int result = CreateSys(fileName);
-			kernel->machine->WriteRegister(2, result);
+  // if is negative the revert result
+  if (_isNegative)
+    result = -result;
 
-			delete[] fileName;
+  // if number buffer != the number itself => overflow or underflow => error
+  if (!isStringTheSameWithNumber(numBuffer, _isNegative, result))
+  {
+    cerr << "Int overflow / underflow \n";
+    return 0;
+  }
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  delete[] numBuffer;
 
-		case SC_Open:
-		{
-			int addr = kernel->machine->ReadRegister(4);
-			int type = kernel->machine->ReadRegister(5);
-			char *fileName = convertStringUserToSystem(addr);
-			int result = OpenSys(fileName, type);
-			kernel->machine->WriteRegister(2, result);
-			delete[] fileName;
+  return result;
+}
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+void handleSC_ReadNum()
+{
+  int num = readNumFromConsole();
+  kernel->machine->WriteRegister(2, num);
+}
 
-		case SC_Close:
-		{
-			int id = kernel->machine->ReadRegister(4);
-			kernel->machine->WriteRegister(2, SysClose(id));
+void handleSC_PrintNum()
+{
+  int i;
+  int temp;
+  int cnt = 0;
+  bool _isNegative;
+  int number = kernel->machine->ReadRegister(4);
+  char *buffer = assignBuffer(MaxIntBufferLength);
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  // special case for 0
+  if (number == 0)
+  {
+    kernel->synchConsoleOut->PutChar('0');
+    delete[] buffer;
+    return;
+  }
 
-		case SC_Read:
-		{
-			int virtAddr = kernel->machine->ReadRegister(4);
-			int charCount = kernel->machine->ReadRegister(5);
-			char *buffer = convertStringUserToSystem(virtAddr, charCount);
-			int fileId = kernel->machine->ReadRegister(6);
+  _isNegative = isNegative(number);
+  if (_isNegative)
+    number = -number;
 
-			DEBUG(dbgFile,
-				  "Read " << charCount << " chars from file " << fileId << "\n");
+  for (; number != 0; number /= 10)
+  {
+    temp = number % 10;
+    buffer[cnt++] = '0' + temp; // Create the reverse buffer
+  }
 
-			kernel->machine->WriteRegister(2, ReadSys(buffer, charCount, fileId));
-			convertSysStringToUser(buffer, virtAddr, charCount);
+  if (_isNegative)
+    kernel->synchConsoleOut->PutChar('-');
 
-			delete[] buffer;
+  // print buffer in reverse order
+  for (i = cnt - 1; i >= 0; i--)
+  {
+    kernel->synchConsoleOut->PutChar(buffer[i]);
+  }
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  delete[] buffer;
+}
 
-		case SC_Write:
-		{
-			int virtAddr = kernel->machine->ReadRegister(4);
-			int charCount = kernel->machine->ReadRegister(5);
-			char *buffer = convertStringUserToSystem(virtAddr, charCount);
-			int fileId = kernel->machine->ReadRegister(6);
+void handleSC_ReadChar()
+{
+  char c = kernel->synchConsoleIn->GetChar();
+  kernel->machine->WriteRegister(2, c);
+}
 
-			DEBUG(dbgFile,
-				  "Write " << charCount << " chars to file " << fileId << "\n");
+void handleSC_PrintChar()
+{
+  char c = (char)kernel->machine->ReadRegister(4);
+  kernel->synchConsoleOut->PutChar(c);
+}
 
-			kernel->machine->WriteRegister(2, WriteSys(buffer, charCount, fileId));
-			convertSysStringToUser(buffer, virtAddr, charCount);
+void handleSC_RandomNum()
+{
+  kernel->machine->WriteRegister(2, RandomNumber());
+}
 
-			delete[] buffer;
+void handleSC_ReadString()
+{
+  int virtAddr = kernel->machine->ReadRegister(4);
+  int length = kernel->machine->ReadRegister(5);
+  int i = 0, returnLength;
+  char c;
+  char *buffer = assignBuffer(length);
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  do
+  {
+    c = kernel->synchConsoleIn->GetChar();
+    if (isEnter(c))
+      break;
+    buffer[i++] = c;
+  } while (i < length);
+  buffer[i] = '\0'; // end buffer with terminated character
 
-		case SC_Seek:
-		{
+  System2User(virtAddr, length, buffer);
+  delete[] buffer;
+}
 
-			int seekPos = kernel->machine->ReadRegister(4);
-			int fileId = kernel->machine->ReadRegister(5);
+void handleSC_PrintString()
+{
+  int i;
+  int virtAddr = kernel->machine->ReadRegister(4);
+  char *buffer = User2System(virtAddr);
 
-			kernel->machine->WriteRegister(2, SeekSys(seekPos, fileId));
+  for (i = 0; i < strlen(buffer); i++)
+    kernel->synchConsoleOut->PutChar(buffer[i]);
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+  delete[] buffer;
+}
 
-		case SC_Remove:
-		{
+void handleSC_Open()
+{
+  int virtualAddr;
+  char *filename;
 
-			int virtAddr = kernel->machine->ReadRegister(4);
-			char *buffer = convertStringUserToSystem(virtAddr);
+  virtualAddr = kernel->machine->ReadRegister(4);
+  filename = User2System(virtualAddr, MaxFileLength);
 
-			if (kernel->fileSystem->Remove(buffer))
-			{
-				kernel->machine->WriteRegister(2, 0);
-			}
-			else
-			{
-				kernel->machine->WriteRegister(2, -1);
-			}
+  OpenFileId id = kernel->fileSystem->OpenF(filename);
+  // return the result to user, user need to check for case error id = -1
+  kernel->machine->WriteRegister(2, id);
+}
 
-			ModifyReturnPoint();
-			return;
-			ASSERTNOTREACHED();
-			break;
-		}
+void handleSC_Close()
+{
+  int openFileID = kernel->machine->ReadRegister(4);
+  // user need to check for case error status = -1
+  kernel->machine->WriteRegister(2, kernel->fileSystem->Close(openFileID));
+}
 
-		default:
-			cerr << "Unexpected system call " << type << "\n";
-			break;
-		}
-		break;
-	}
+void handleSC_Remove()
+{
+  int virtualAddr = kernel->machine->ReadRegister(4);
+  char *name = User2System(virtualAddr);
+  if (kernel->fileSystem->Remove(name)) // remove successfully
+  {
+    kernel->machine->WriteRegister(2, 0);
+  }
+  else
+  {
+    kernel->machine->WriteRegister(2, -1);
+  }
 
-	// other exceptions: print error and halt
-	case PageFaultException:
-	case ReadOnlyException:
-	case BusErrorException:
-	case AddressErrorException:
-	case OverflowException:
-	case IllegalInstrException:
-	case NumExceptionTypes:
-	{
-		cerr << "Error: " << which << ".\n";
-		SysHalt();
-		ASSERTNOTREACHED();
-	}
+  delete[] name;
+}
 
-	default:
-	{
-		cerr << "Unexpected user mode exception" << (int)which << "\n";
-		break;
-	}
-	}
+void handleSC_Read()
+{
+  int virtualAddr = kernel->machine->ReadRegister(4);
+  int size = kernel->machine->ReadRegister(5);
+  OpenFileId id = kernel->machine->ReadRegister(6);
+  OpenFile *file = kernel->fileSystem->GetOpenFile(id);
 
-	ASSERTNOTREACHED();
+  // file not found & can not read from the stdout
+  if (file == NULL || id == _ConsoleOutput)
+  {
+    kernel->machine->WriteRegister(2, -1);
+    return;
+  }
+
+  char *buffer = assignBuffer(size);
+
+  if (buffer == NULL) // can not allocate memory for the buffer
+  {
+    kernel->machine->WriteRegister(2, -1);
+    return;
+  }
+
+  // if read from stdin, then wait for user input
+  if (id == _ConsoleInput)
+    size = kernel->synchConsoleIn->Read(buffer, size);
+  // else read the file
+  else
+    size = file->Read(buffer, size);
+
+  System2User(virtualAddr, size, buffer);
+  // return the size of the file
+  kernel->machine->WriteRegister(2, size);
+  delete[] buffer;
+}
+
+void handleSC_Write()
+{
+  int virtualAddr = kernel->machine->ReadRegister(4);
+  int size = kernel->machine->ReadRegister(5);
+  OpenFileId id = kernel->machine->ReadRegister(6);
+  OpenFile *file = kernel->fileSystem->GetOpenFile(id);
+
+  // file not found and can not write to stdin
+  if (file == NULL || id == _ConsoleInput)
+  {
+    kernel->machine->WriteRegister(2, -1);
+    return;
+  }
+
+  char *buffer = User2System(virtualAddr, size);
+
+  if (buffer == NULL)
+  {
+    kernel->machine->WriteRegister(2, -1);
+    return;
+  }
+
+  // if write to stdout -> use synchConsoleOut->Write
+  if (id == _ConsoleOutput)
+    size = kernel->synchConsoleOut->Write(buffer, size);
+  // else write to the file
+  else
+    size = file->Write(buffer, size);
+
+  kernel->machine->WriteRegister(2, size);
+  delete[] buffer;
+}
+
+void handleSC_Seek()
+{
+  int position = kernel->machine->ReadRegister(4);
+  OpenFileId id = kernel->machine->ReadRegister(5);
+  OpenFile *file = kernel->fileSystem->GetOpenFile(id);
+
+  // can not find the file, or seek in console, or position is over the length of the file
+  if (file == NULL || id == _ConsoleInput || id == _ConsoleOutput || position > file->Length())
+  {
+    kernel->machine->WriteRegister(2, -1);
+    return;
+  }
+
+  if (position == -1) // seek to the end of the file
+    position = file->Length();
+
+  file->Seek(position);
+  kernel->machine->WriteRegister(2, position);
 }
